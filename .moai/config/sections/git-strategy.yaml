@@ -2,9 +2,9 @@
 # Workflow configuration for Manual/Personal/Team modes
 
 git_strategy:
-  mode: "personal"                # manual, personal, team
+  mode: "manual"                # manual, personal, team
   provider: "github"          # github, gitlab
-  github_username: "feel29na@gmail.com"  # GitHub username (for personal/team modes)
+  github_username: ""  # GitHub username (for personal/team modes)
   gitlab:
     instance_url: ""  # GitLab instance URL
 
