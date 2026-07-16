@@ -1,0 +1,8 @@
+# Default: normalize all detected text files to CRLF in both the repo and
+# the working tree (this project is developed primarily on Windows).
+* text=auto eol=crlf
+
+# Shell scripts must stay LF — Git Bash / WSL fail to run a script whose
+# shebang line ends in CRLF ("bad interpreter" / syntax errors).
+*.sh text eol=lf
+.git_hooks/pre-push text eol=lf
