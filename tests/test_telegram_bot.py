@@ -10,10 +10,16 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from markdown_creat.telegram_bot.bot import build_application, on_error, run_polling
+from markdown_creat.telegram_bot.bot import (
+    build_application,
+    on_error,
+    register_handlers,
+    run_polling,
+)
 from markdown_creat.telegram_bot.config import MissingBotTokenError
 
 
@@ -66,3 +72,56 @@ def test_run_polling_fails_fast_when_token_missing(monkeypatch, tmp_path):
 
     with pytest.raises(MissingBotTokenError):
         run_polling(env_path=str(tmp_path / "missing.env"))
+
+
+# ---------------------------------------------------------------------------
+# M5 -- handler registration wires text/photo/document callbacks (REQ-TELEGRAM-004~007)
+# ---------------------------------------------------------------------------
+
+
+def test_register_handlers_adds_text_photo_and_document_handlers():
+    application = build_application(token="123456:fake-token-for-app-construction")
+
+    register_handlers(application, base_dir="telegram-notes")
+
+    assert len(application.handlers[0]) == 3
+
+
+def test_register_handlers_text_callback_delegates_to_dispatch():
+    application = build_application(token="123456:fake-token-for-app-construction")
+    register_handlers(application, base_dir="telegram-notes")
+    text_handler = application.handlers[0][0]
+    fake_update, fake_context = object(), object()
+
+    with patch("markdown_creat.telegram_bot.bot.on_text_message", new=AsyncMock()) as mock_on_text:
+        asyncio.run(text_handler.callback(fake_update, fake_context))
+
+    mock_on_text.assert_awaited_once_with(fake_update, fake_context, "telegram-notes")
+
+
+def test_register_handlers_photo_callback_delegates_to_dispatch():
+    application = build_application(token="123456:fake-token-for-app-construction")
+    register_handlers(application, base_dir="telegram-notes")
+    photo_handler = application.handlers[0][1]
+    fake_update, fake_context = object(), object()
+
+    with patch(
+        "markdown_creat.telegram_bot.bot.on_photo_message", new=AsyncMock()
+    ) as mock_on_photo:
+        asyncio.run(photo_handler.callback(fake_update, fake_context))
+
+    mock_on_photo.assert_awaited_once_with(fake_update, fake_context, "telegram-notes")
+
+
+def test_register_handlers_document_callback_delegates_to_dispatch():
+    application = build_application(token="123456:fake-token-for-app-construction")
+    register_handlers(application, base_dir="telegram-notes")
+    document_handler = application.handlers[0][2]
+    fake_update, fake_context = object(), object()
+
+    with patch(
+        "markdown_creat.telegram_bot.bot.on_document_message", new=AsyncMock()
+    ) as mock_on_document:
+        asyncio.run(document_handler.callback(fake_update, fake_context))
+
+    mock_on_document.assert_awaited_once_with(fake_update, fake_context, "telegram-notes")
