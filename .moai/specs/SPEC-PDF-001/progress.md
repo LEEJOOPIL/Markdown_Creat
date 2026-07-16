@@ -2,9 +2,9 @@
 id: SPEC-PDF-001
 title: "PDF → 마크다운 변환 코어 기능 — 진행 기록"
 version: "0.1.0"
-status: draft
+status: completed
 created: 2026-07-14
-updated: 2026-07-14
+updated: 2026-07-16
 author: manager-spec
 priority: P1
 phase: "v0.1.0 target"
@@ -97,7 +97,23 @@ m1_to_mN_commit_strategy: "single commit covering M1-M5 (RED+GREEN+REFACTOR auth
 
 ## §E.4 Sync-phase Audit-Ready Signal
 
-_<pending sync-phase — manager-docs 소유>_
+```yaml
+sync_complete_at: "2026-07-16"
+sync_commit_sha: "pending-backfill-sync-close"
+docs_updated:
+  - "README.md (created)"
+  - "CHANGELOG.md (created)"
+spec_status_transition: "in-progress -> completed"
+```
+
+Sync 범위: 프로젝트 루트에 README.md, CHANGELOG.md를 신규 생성하고 SPEC-PDF-001의
+spec.md/progress.md frontmatter 상태를 `in-progress` → `completed`로 전환.
+테스트 재검증: `pytest -q` 17 passed (회귀 없음).
+
+무관한 변경 제외: 이번 세션에서 git 상태에 함께 나타난 300개 이상의 "수정됨" 표시
+파일(.claude/, .moai/config/ 등)은 `core.autocrlf=true` 설정으로 인한 줄바꿈 문자
+정규화 경고일 뿐 실제 내용 변경이 아니며, SPEC-PDF-001과 무관하므로 사용자 확인 후
+이번 sync 커밋 범위에서 명시적으로 제외함.
 
 ## §F Phase 4 Mode Selection
 
