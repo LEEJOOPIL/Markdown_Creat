@@ -2,7 +2,7 @@
 id: SPEC-TELEGRAM-001
 title: "텔레그램 → 마크다운 저장 봇 — 진행 기록"
 version: "0.3.0"
-status: in-progress
+status: completed
 created: 2026-07-15
 updated: 2026-07-16
 author: manager-spec
@@ -92,7 +92,7 @@ Test files (9): `test_telegram_storage.py`, `test_telegram_extract.py`, `test_te
 | M3 | `1b0a8d2` | feat(SPEC-TELEGRAM-001): M3 error handling and token injection policy (TDD RED-GREEN) |
 | M4 | `a05bf5f` | feat(SPEC-TELEGRAM-001): M4 bot entry point (python -m markdown_creat.telegram_bot) |
 | M5 | `5f82809` | feat(SPEC-TELEGRAM-001): M5 full handler/storage/extraction integration (TDD RED-GREEN) |
-| M6 | pending-backfill (this commit cannot reference its own SHA; backfilled in a follow-up note if needed) | chore(SPEC-TELEGRAM-001): M6 refactor, quality gate, and progress.md evidence |
+| M6 | `605cea4` (backfilled at sync-phase) | chore(SPEC-TELEGRAM-001): M6 refactor, quality gate, and status transition (TDD REFACTOR) |
 
 No `git push` was attempted at any milestone (push_to_remote: false confirmed in `.moai/config/sections/git-strategy.yaml`). No `--no-verify` was used on any commit.
 
@@ -120,4 +120,16 @@ m1_to_mN_commit_strategy: "one commit per milestone (M1-M6), each following RED 
 
 ## §E.4 Sync-phase Audit-Ready Signal
 
-_<pending sync-phase — manager-docs 소유>_
+manager-docs (Level 2 spec-anchored sync) updated spec.md (as-implemented annotation for `dispatch.py`), plan.md (M1-M6 marked complete with actual commit SHAs + dependency-timing note reconciliation), acceptance.md (10/10 AC PASS confirmation cross-referenced against this file's §E.2 matrix), README.md (new Telegram bot Features/Usage/Project Status sections), and CHANGELOG.md (new `[Unreleased]` → `### Added` entry). Frontmatter `status:` transitioned `in-progress → completed` across all 4 SPEC artifacts on the single sync commit (merged 3-phase close per spec-frontmatter-schema.md). MX tag scan: skipped (best-effort, no obviously-missing `@MX:ANCHOR` observed on a quick pass; not blocking per sync-phase scope). No `git push` / `gh pr create` performed (`push_to_remote: false`, main_direct workflow, solo-developer local-only).
+
+```yaml
+sync_complete_at: "2026-07-16"
+sync_commit_sha: "pending-backfill -- this is the commit being created; see git log for the actual SHA of the docs(SPEC-TELEGRAM-001) sync commit"
+sync_status: PASS
+changelog_entry_position: "[Unreleased] > ### Added, appended after the existing SPEC-PDF-001 entry"
+frontmatter_status_transitions:
+  spec_md: "in-progress -> completed"
+  plan_md: "in-progress -> completed"
+  acceptance_md: "in-progress -> completed"
+  progress_md: "in-progress -> completed"
+```

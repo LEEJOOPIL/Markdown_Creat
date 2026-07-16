@@ -2,7 +2,7 @@
 id: SPEC-TELEGRAM-001
 title: "텔레그램 → 마크다운 저장 봇"
 version: "0.3.0"
-status: in-progress
+status: completed
 created: 2026-07-15
 updated: 2026-07-16
 author: manager-spec
@@ -24,6 +24,7 @@ tier: M
 | 0.1.0 | 2026-07-15 | manager-spec | 최초 초안 작성. 텔레그램 봇이 수신한 텍스트·사진·문서 메시지를 날짜 폴더 기반 `.md`로 저장. long polling, 봇 토큰 환경변수 주입, 사진 OCR(신규 범위), PDF 텍스트 추출은 SPEC-PDF-001 재사용. Tier M. |
 | 0.2.0 | 2026-07-16 | manager-spec | plan-audit 4차 반복 수정: (1) acceptance.md 8개 AC를 GEARS 패턴으로 재작성, REQ-TELEGRAM-002 신규 AC-TELEGRAM-005b 추가; (2) SPEC-PDF-001이 `status: completed`로 확인됨에 따라 관련 서술 전면 갱신(§ PDF 텍스트 추출 재사용, plan.md §A/§D/§E, acceptance.md §D.1, progress.md §E.1); (3) REQ-TELEGRAM-001/002/003/010/011/012의 shall/shall-not 복합 절을 분리(REQ-TELEGRAM-013~017 신규), REQ-TELEGRAM-008의 설정 가능성을 REQ-TELEGRAM-018(Where)로 분리; (4) plan.md M4에 `pyproject.toml` 의존성 추가 하위 단계 명시. |
 | 0.3.0 | 2026-07-16 | manager-spec | plan-audit 5차 반복(narrow-scope) 수정: (1) REQ-TELEGRAM-018(베이스 폴더 설정)에 대한 인수 기준 부재를 해소 — acceptance.md에 AC-TELEGRAM-001b 신규 추가(REQ-TELEGRAM-018, 008 커버리지); (2) REQ-TELEGRAM-006/007의 GEARS shall 절에서 특정 함수·라이브러리 리터럴(`pdf_to_markdown()`, `pytesseract`)을 제거하고 동작 서술로 재작성 — 구체 명칭은 이미 §C 제약에 기재되어 있으므로 중복 없이 그대로 유지; (3) acceptance.md AC-TELEGRAM-005b에서 정적 `.gitignore` 등록 점검을 런타임 "When the bot starts" 트리거에서 분리(§D.2 DoD 항목이 이미 해당 점검을 소유); (4) acceptance.md AC-TELEGRAM-002b의 미구현 절("shall not reimplement PDF parsing logic")에 §Exclusions 추적 참조 추가. |
+| 0.3.0 (as-implemented, sync) | 2026-07-16 | manager-docs | run-phase 구현 완료(M1~M6, 10/10 AC PASS, 96% 커버리지). §C 기술 접근에 as-implemented 주석 추가: 계획된 8개 모듈에 더해 `dispatch.py`(Update→handlers.py 어댑터 계층)가 스코프 내부 드리프트로 추가됨(신규 외부 의존성 없음, 이미 승인된 `telegram_bot/` 서브패키지 내부). status: in-progress → completed. |
 
 ---
 
@@ -42,6 +43,8 @@ tier: M
 PDF/문서 첨부의 텍스트 추출은 **SPEC-PDF-001의 `pdf_to_markdown(pdf_path, output_path)` 공개 함수를 재사용**한다. 본 SPEC은 PDF 파싱 로직을 재구현하지 않는다. SPEC-PDF-001은 `status: completed`이며 `pdf_to_markdown(pdf_path: str, output_path: str) -> None`가 `src/markdown_creat/pdf_to_markdown.py:62`에 실제로 구현되어 있다(2026-07-16 확인). frontmatter의 `depends_on: [SPEC-PDF-001]`은 계속 유지하며, run-phase의 Depends_on Pre-flight Check는 통과할 것으로 예상된다. (이미지 OCR은 SPEC-PDF-001이 명시적으로 제외한 범위이므로 본 SPEC에서 신규 정의한다 — §B REQ-TELEGRAM-007.)
 
 기술 기반: Python 3.10+, `src/` 레이아웃(`src/markdown_creat/telegram_bot/`), 봇 라이브러리 `python-telegram-bot`, OCR `pytesseract` + Tesseract 엔진. 개발 방법론은 `quality.yaml`의 `constitution.development_mode: tdd`(RED-GREEN-REFACTOR)를 따른다.
+
+> **(as-implemented, 2026-07-16)**: 실제 구현은 `telegram_bot/` 서브패키지 내에 계획된 8개 모듈에 더해 `dispatch.py`(Update → `handlers.py` 어댑터 계층, `python-telegram-bot`의 `Update`/`Context` 타입을 `handlers.py`로부터 격리하여 단위 테스트 용이성 확보)를 추가로 포함한다. 이는 이미 승인된 서브패키지 경계 내부의 스코프 내부 드리프트이며 신규 외부 의존성을 추가하지 않는다. 상세: `progress.md` §E.2.
 
 ---
 

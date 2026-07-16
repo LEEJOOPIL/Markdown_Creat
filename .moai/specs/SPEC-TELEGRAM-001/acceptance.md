@@ -2,7 +2,7 @@
 id: SPEC-TELEGRAM-001
 title: "텔레그램 → 마크다운 저장 봇 — 인수 기준"
 version: "0.3.0"
-status: in-progress
+status: completed
 created: 2026-07-15
 updated: 2026-07-16
 author: manager-spec
@@ -60,10 +60,10 @@ tier: M
 
 ## §D.2 품질 게이트 / Definition of Done
 
-- [ ] AC-TELEGRAM-001a, 001b, 002a, 002b, 003a, 003b, 004a, 004b, 005a, 005b 전 시나리오 통과.
-- [ ] 테스트 커버리지 85% 이상 (`quality.yaml` `constitution.test_coverage_target`). 텔레그램 API·Tesseract·PyMuPDF(SPEC-PDF-001)는 목/스텁으로 격리.
-- [ ] `ruff` 린트 무경고, `black` 포맷 준수, `pytest` 전체 그린.
-- [ ] spec.md의 REQ-TELEGRAM-001~018이 각각 최소 1개 테스트로 검증됨(추적성).
-- [ ] `.env`가 `.gitignore`에 등록되어 있고(정적 파일 존재 점검), 소스·커밋에 토큰 하드코딩이 없음(REQ-TELEGRAM-002, 014).
-- [ ] PDF 파싱 로직이 본 SPEC 내에서 재구현되지 않고 SPEC-PDF-001을 재사용함(§Exclusions 준수).
-- [ ] 봇 토큰 등 비밀 값이 `.md`/로그에 기록되지 않음(REQ-TELEGRAM-012).
+- [x] AC-TELEGRAM-001a, 001b, 002a, 002b, 003a, 003b, 004a, 004b, 005a, 005b 전 시나리오 통과. **(as-implemented, 2026-07-16)** 10/10 AC PASS — 상세 검증 명령·출력은 `progress.md` §E.2 AC Binary PASS/FAIL Matrix 참조.
+- [x] 테스트 커버리지 85% 이상 (`quality.yaml` `constitution.test_coverage_target`). 텔레그램 API·Tesseract·PyMuPDF(SPEC-PDF-001)는 목/스텁으로 격리. **실제**: 96% overall coverage (70 passed) — `progress.md` §E.2 Full Suite + Coverage 참조.
+- [x] `ruff` 린트 무경고, `black` 포맷 준수, `pytest` 전체 그린. **실제**: `ruff check` all checks passed, `black --check` 18 files unchanged, `pytest` 70 passed.
+- [x] spec.md의 REQ-TELEGRAM-001~018이 각각 최소 1개 테스트로 검증됨(추적성). **실제**: per-REQ grep sweep으로 전 REQ 추적성 확인됨(`progress.md` §E.2).
+- [x] `.env`가 `.gitignore`에 등록되어 있고(정적 파일 존재 점검), 소스·커밋에 토큰 하드코딩이 없음(REQ-TELEGRAM-002, 014). **실제**: AC-TELEGRAM-005b 검증에서 `.env` gitignore 등록 확인됨.
+- [x] PDF 파싱 로직이 본 SPEC 내에서 재구현되지 않고 SPEC-PDF-001을 재사용함(§Exclusions 준수). **실제**: `extract.py`가 `pdf_to_markdown()`을 임시 파일 write-then-read 래퍼로 재사용(재구현 없음).
+- [x] 봇 토큰 등 비밀 값이 `.md`/로그에 기록되지 않음(REQ-TELEGRAM-012). **실제**: AC-TELEGRAM-005a 검증 통과.

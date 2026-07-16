@@ -2,7 +2,7 @@
 id: SPEC-TELEGRAM-001
 title: "텔레그램 → 마크다운 저장 봇 — 구현 계획"
 version: "0.2.0"
-status: in-progress
+status: completed
 created: 2026-07-15
 updated: 2026-07-16
 author: manager-spec
@@ -47,32 +47,38 @@ tier: M
 
 > 사람이 검토할 때 변경 가능성이 가장 높은 결정(저장 레이아웃 · 노트 스키마 · 핸들러 계약 · 오류 정책)을 먼저 배치하고, 기계적 구현/리팩터 단계는 뒤로 미룬다.
 
-### M1 — 저장 레이아웃 및 노트 스키마 결정 (변경 가능성 최상)
+### M1 — 저장 레이아웃 및 노트 스키마 결정 (변경 가능성 최상) — ✅ 완료 (`01b8a96`)
 - 날짜 폴더/파일명 규칙 확정(REQ-TELEGRAM-008: `telegram-notes/YYYY-MM-DD/YYYY-MM-DD_HHMMSS.md`), 베이스 폴더 설정 키 확정.
 - `.md` 본문 스키마 확정(REQ-TELEGRAM-009): 타임스탬프·발신자/채팅 컨텍스트·본문·첨부 링크의 배치(예: front-matter 유사 헤더 + 본문). 첨부 원본의 `files/` 배치 규칙(파일명 충돌 회피 전략 포함) 확정.
 - 이는 사용자가 나중에 노트를 읽는 방식과 직결되어 검토가 가장 필요한 지점이다.
 - RED: 저장기(storage)에 대한 실패 테스트 작성.
+- **실제**: `feat(SPEC-TELEGRAM-001): M1 storage layout and note schema (TDD RED-GREEN)` — commit `01b8a96`.
 
-### M2 — 메시지 핸들러 계약 및 추출 통합 결정 (변경 가능성 상)
+### M2 — 메시지 핸들러 계약 및 추출 통합 결정 (변경 가능성 상) — ✅ 완료 (`45a4048`)
 - 텍스트/사진/문서 핸들러의 입력→출력 계약 확정(REQ-TELEGRAM-004~007). 사진 OCR(REQ-TELEGRAM-007)과 문서 PDF 추출(REQ-TELEGRAM-006)을 언제·어떻게 `.md` 본문에 병합할지 확정.
 - SPEC-PDF-001 `pdf_to_markdown(pdf_path, output_path)` 재사용 방식 확정: 임시 `.md`로 추출 후 본문에 병합할지, 또는 SPEC-PDF-001에 인메모리 추출 경로가 필요한지 판단. **후자가 필요하면 SPEC-PDF-001 범위 확장이 되므로, 구현하지 말고 blocker report로 오케스트레이터에 반환**(본 SPEC은 PDF 파싱 재구현 금지 — §Exclusions).
 - 비-PDF 문서(예: `.txt`, `.docx`) 처리 범위 확정 — 최소 범위(PDF만 텍스트 추출, 그 외는 원본 저장 + 유형 노트)로 시작 권장.
 - RED: 각 핸들러에 대한 실패 테스트 작성(외부 API·Tesseract·PDF는 목/스텁).
+- **실제**: `feat(SPEC-TELEGRAM-001): M2 handler contracts and extraction integration (TDD RED-GREEN)` — commit `45a4048`. 인메모리 추출 경로는 불필요했음(blocker 미발생) — `extract.py`의 임시 파일 write-then-read 래퍼로 `pdf_to_markdown()`의 파일 출력 계약을 그대로 재사용. **(as-implemented)** M2의 핸들러/추출 테스트가 `pyproject.toml` 의존성을 import 가능해야 했으므로, `python-telegram-bot`·`pytesseract` 의존성 선언이 아래 M4의 원래 계획에서 M2로 앞당겨짐(pulled forward).
 
-### M3 — 오류 처리 및 토큰 주입 정책 결정 (변경 가능성 상)
+### M3 — 오류 처리 및 토큰 주입 정책 결정 (변경 가능성 상) — ✅ 완료 (`1b0a8d2`)
 - 토큰 부재 fail-fast(REQ-TELEGRAM-003), API/네트워크 오류 시 폴링 지속(REQ-TELEGRAM-010), OCR/PDF 추출 실패 시 원본 보존 + 실패 노트(REQ-TELEGRAM-011), 비밀 값 비기록(REQ-TELEGRAM-012)의 구체 동작·메시지 형태 확정.
 - 환경변수 vs `.env` 로딩 우선순위 및 `.env`의 `.gitignore` 등록 확정.
 - RED: 각 오류 경로에 대한 실패 테스트 작성.
+- **실제**: `feat(SPEC-TELEGRAM-001): M3 error handling and token injection policy (TDD RED-GREEN)` — commit `1b0a8d2`.
 
-### M4 — 봇 구성 및 진입점 구현 (GREEN, 기계적)
+### M4 — 봇 구성 및 진입점 구현 (GREEN, 기계적) — ✅ 완료 (`a05bf5f`)
 - `config.py` + `bot.py` + `__main__.py` 최소 구현. `python-telegram-bot`으로 polling 루프 + 핸들러 등록. long polling만 사용(REQ-TELEGRAM-001).
-- `pyproject.toml`의 `[project.dependencies]`에 `python-telegram-bot`과 `pytesseract`를 추가한다(현재 `pymupdf>=1.24`만 선언됨). Tesseract OCR 엔진 자체는 시스템 레벨 외부 바이너리로 pip 의존성 범위 밖이며, §C 제약에 따라 별도 설치가 필요하다.
+- ~~`pyproject.toml`의 `[project.dependencies]`에 `python-telegram-bot`과 `pytesseract`를 추가한다(현재 `pymupdf>=1.24`만 선언됨).~~ **(as-implemented)** 이 의존성 선언 단계는 M2로 앞당겨졌다(M2의 핸들러/추출 테스트가 해당 패키지들을 import 가능해야 했기 때문). Tesseract OCR 엔진 자체는 시스템 레벨 외부 바이너리로 pip 의존성 범위 밖이며, §C 제약에 따라 별도 설치가 필요하다.
+- **실제**: `feat(SPEC-TELEGRAM-001): M4 bot entry point (python -m markdown_creat.telegram_bot)` — commit `a05bf5f`.
 
-### M5 — 핸들러·저장·추출 구현 (GREEN, 기계적)
+### M5 — 핸들러·저장·추출 구현 (GREEN, 기계적) — ✅ 완료 (`5f82809`)
 - `handlers.py` + `storage.py` + `ocr.py` + `extract.py` 최소 구현으로 테스트 통과. SPEC-PDF-001의 `pdf_to_markdown(pdf_path, output_path)`가 사용 가능하므로, `extract.py`에서 PDF 추출 경로를 완전 통합한다(임시 `.md` 출력 후 본문 병합 방식, M2에서 확정한 계약을 따름) — 스킵/보류 없이 통합 테스트를 포함한다.
+- **실제**: `feat(SPEC-TELEGRAM-001): M5 full handler/storage/extraction integration (TDD RED-GREEN)` — commit `5f82809`. 계획된 8개 모듈에 더해 `dispatch.py`(Update → `handlers.py` 어댑터 계층)가 신규 추가됨 — 스코프 내부 드리프트, 상세는 `progress.md` §E.2.
 
-### M6 — 리팩터 및 품질 게이트 (REFACTOR, 기계적)
+### M6 — 리팩터 및 품질 게이트 (REFACTOR, 기계적) — ✅ 완료 (`605cea4`)
 - `ruff` + `black` 정리, 커버리지 85% 확인, 중복 제거, 함수 분리 정리. `.env` gitignore 확인.
+- **실제**: `chore(SPEC-TELEGRAM-001): M6 refactor, quality gate, and status transition (TDD REFACTOR)` — commit `605cea4`. 최종 결과: 70 tests passed, 96% coverage, `ruff check` all clean, `black --check` all unchanged (18 files).
 
 ## §E. 리스크 (Risks)
 
