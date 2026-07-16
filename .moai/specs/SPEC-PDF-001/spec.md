@@ -2,9 +2,9 @@
 id: SPEC-PDF-001
 title: "PDF → 마크다운 변환 코어 기능"
 version: "0.1.0"
-status: draft
+status: in-progress
 created: 2026-07-14
-updated: 2026-07-14
+updated: 2026-07-16
 author: manager-spec
 priority: P1
 phase: "v0.1.0 target"
