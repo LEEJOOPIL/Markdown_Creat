@@ -1,6 +1,6 @@
 """Tests for markdown_creat.telegram_bot.__main__.
 
-Covers REQ-TELEGRAM-003/015, AC-TELEGRAM-003a: the CLI entry point exits
+Covers REQ-TELEGRAM-003, REQ-TELEGRAM-015, AC-TELEGRAM-003a: the CLI entry point exits
 cleanly (non-zero exit code, clear stderr message, no raw traceback) when
 no bot token is configured.
 """

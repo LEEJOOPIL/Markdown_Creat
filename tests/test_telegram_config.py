@@ -1,8 +1,9 @@
 """Tests for markdown_creat.telegram_bot.config.
 
 Covers REQ-TELEGRAM-002 (env var or gitignored `.env` token source),
-REQ-TELEGRAM-003/015 (fail-fast on missing token), REQ-TELEGRAM-012/014 (no
-secret hardcoding/logging), REQ-TELEGRAM-018 (configurable base folder).
+REQ-TELEGRAM-003, REQ-TELEGRAM-015 (fail-fast on missing token),
+REQ-TELEGRAM-012, REQ-TELEGRAM-014 (no secret hardcoding/logging),
+REQ-TELEGRAM-018 (configurable base folder).
 """
 
 from __future__ import annotations
@@ -66,7 +67,7 @@ def test_load_bot_token_ignores_comments_and_blank_lines_in_dotenv(monkeypatch, 
 
 
 # ---------------------------------------------------------------------------
-# M3 -- fail-fast on missing token (REQ-TELEGRAM-003, 015, AC-TELEGRAM-003a)
+# M3 -- fail-fast on missing token (REQ-TELEGRAM-003, REQ-TELEGRAM-015, AC-TELEGRAM-003a)
 # ---------------------------------------------------------------------------
 
 
@@ -121,7 +122,7 @@ def test_load_base_folder_uses_configured_dotenv_value(monkeypatch, tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# M3 -- secret discipline (REQ-TELEGRAM-012, 014, AC-TELEGRAM-005a/005b)
+# M3 -- secret discipline (REQ-TELEGRAM-012, REQ-TELEGRAM-014, AC-TELEGRAM-005a/005b)
 # ---------------------------------------------------------------------------
 
 

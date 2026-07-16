@@ -1,10 +1,10 @@
 ---
 id: SPEC-TELEGRAM-001
 title: "텔레그램 → 마크다운 저장 봇 — 구현 계획"
-version: "0.1.0"
-status: draft
+version: "0.2.0"
+status: in-progress
 created: 2026-07-15
-updated: 2026-07-15
+updated: 2026-07-16
 author: manager-spec
 priority: P1
 phase: "v0.1.0 target"
@@ -21,7 +21,7 @@ tier: M
 
 그린필드 프로젝트의 세 번째 SPEC. 분석할 기존 코드 없음. `python-telegram-bot`으로 long polling 봇을 구성하여 수신 메시지를 날짜 폴더 기반 `.md`로 저장한다. 사진은 OCR(pytesseract), PDF/문서는 SPEC-PDF-001의 `pdf_to_markdown()` 재사용으로 텍스트를 추출한다. TDD(RED-GREEN-REFACTOR)로 구현한다. Tier M(봇 루프 + 다중 핸들러 + 저장 + 3종 외부 통합 + 다수 오류 경로).
 
-**의존성 주의**: `depends_on: [SPEC-PDF-001]`. SPEC-PDF-001은 아직 미구현(status: draft)이므로, `/moai run` 시 Depends_on Pre-flight Check가 미충족 의존성을 사용자에게 노출한다(wait/override/abort). PDF 추출 부분은 SPEC-PDF-001 구현 완료 후 통합하는 것을 권장한다.
+**의존성 확인**: `depends_on: [SPEC-PDF-001]`. SPEC-PDF-001은 `status: completed`이며 `pdf_to_markdown(pdf_path: str, output_path: str) -> None`가 `src/markdown_creat/pdf_to_markdown.py:62`에 구현되어 있다(2026-07-16 확인). `/moai run` 시 Depends_on Pre-flight Check는 통과할 것으로 예상되므로, PDF 추출 부분(M5)은 보류 없이 완전 통합한다.
 
 ## §B. PRESERVE / EXTEND
 
@@ -66,16 +66,17 @@ tier: M
 
 ### M4 — 봇 구성 및 진입점 구현 (GREEN, 기계적)
 - `config.py` + `bot.py` + `__main__.py` 최소 구현. `python-telegram-bot`으로 polling 루프 + 핸들러 등록. long polling만 사용(REQ-TELEGRAM-001).
+- `pyproject.toml`의 `[project.dependencies]`에 `python-telegram-bot`과 `pytesseract`를 추가한다(현재 `pymupdf>=1.24`만 선언됨). Tesseract OCR 엔진 자체는 시스템 레벨 외부 바이너리로 pip 의존성 범위 밖이며, §C 제약에 따라 별도 설치가 필요하다.
 
 ### M5 — 핸들러·저장·추출 구현 (GREEN, 기계적)
-- `handlers.py` + `storage.py` + `ocr.py` + `extract.py` 최소 구현으로 테스트 통과. SPEC-PDF-001 미구현 시 `extract.py`는 인터페이스만 갖추고 PDF 추출 경로는 통합 테스트를 스킵/보류(의존성 미충족을 progress.md에 기록).
+- `handlers.py` + `storage.py` + `ocr.py` + `extract.py` 최소 구현으로 테스트 통과. SPEC-PDF-001의 `pdf_to_markdown(pdf_path, output_path)`가 사용 가능하므로, `extract.py`에서 PDF 추출 경로를 완전 통합한다(임시 `.md` 출력 후 본문 병합 방식, M2에서 확정한 계약을 따름) — 스킵/보류 없이 통합 테스트를 포함한다.
 
 ### M6 — 리팩터 및 품질 게이트 (REFACTOR, 기계적)
 - `ruff` + `black` 정리, 커버리지 85% 확인, 중복 제거, 함수 분리 정리. `.env` gitignore 확인.
 
 ## §E. 리스크 (Risks)
 
-- **[의존성] SPEC-PDF-001 미구현**: PDF 텍스트 추출은 SPEC-PDF-001의 `pdf_to_markdown()`에 의존하나 해당 SPEC은 아직 draft이다. run-phase Depends_on Pre-flight Check가 이를 노출한다. 완전 통합은 SPEC-PDF-001 완료 후 권장. 재사용 시 `pdf_to_markdown(pdf_path, output_path)`가 파일 출력 계약이므로, 봇에서는 임시 `.md`로 추출 후 본문 병합하는 접근이 자연스러움(M2에서 확정).
+- **[통합 방식] 파일 출력 계약 흡수 (리스크 해소됨)**: SPEC-PDF-001은 `status: completed`이며 `pdf_to_markdown(pdf_path, output_path)`가 `src/markdown_creat/pdf_to_markdown.py:62`에서 사용 가능하다(2026-07-16 확인) — 더 이상 의존성 리스크가 아니다. 참고로 이 함수는 파일 출력 계약이므로, 봇에서는 임시 `.md`로 추출 후 본문 병합하는 접근을 사용한다(M2에서 확정, M5에서 완전 통합).
 - **[보안/접근 제어 — 리스크로만 기록, 구현 안 함]**: 접근 제어(allowlist)가 없으므로 봇 토큰을 아는 임의의 채팅이 봇에 메시지를 보내 노트를 축적시킬 수 있다. 개인용 봇 전제에서는 허용 리스크이나, 봇 토큰 유출 시 스팸/원치 않는 저장이 발생할 수 있다. 필요 시 후속 SPEC에서 chat_id allowlist를 도입할 것을 권장한다(§Exclusions에 따라 본 SPEC은 미구현).
 - **[외부 바이너리] Tesseract 미설치**: OCR은 시스템에 Tesseract 엔진이 설치되어 있어야 한다. 미설치/실패 시 REQ-TELEGRAM-011에 따라 원본 저장 + 실패 노트로 처리(메시지 손실 없음).
 - **[네트워크] 장시간 폴링 안정성**: 네트워크 단절·API rate limit 시 REQ-TELEGRAM-010에 따라 루프가 죽지 않고 재시도/지속한다. `python-telegram-bot`의 내장 재시도 동작에 위임 가능.

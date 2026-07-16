@@ -1,10 +1,10 @@
 """Bot construction, long-polling entry point, and polling-loop resilience.
 
-Long polling only (REQ-TELEGRAM-001, 013 -- no webhook mode is registered or
-supported). Token is resolved via `config.load_bot_token()`, which fails
-fast (REQ-TELEGRAM-003, 015) before any network activity is attempted.
-API/network errors during polling are logged and swallowed so the polling
-loop keeps running (REQ-TELEGRAM-010, 016).
+Long polling only (REQ-TELEGRAM-001, REQ-TELEGRAM-013 -- no webhook mode is
+registered or supported). Token is resolved via `config.load_bot_token()`,
+which fails fast (REQ-TELEGRAM-003, REQ-TELEGRAM-015) before any network
+activity is attempted. API/network errors during polling are logged and
+swallowed so the polling loop keeps running (REQ-TELEGRAM-010, REQ-TELEGRAM-016).
 """
 
 from __future__ import annotations
@@ -27,7 +27,8 @@ async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Log a Telegram API/network error without re-raising it.
 
     python-telegram-bot's polling loop only keeps running when the
-    registered error handler itself does not raise (REQ-TELEGRAM-010, 016).
+    registered error handler itself does not raise
+    (REQ-TELEGRAM-010, REQ-TELEGRAM-016).
     """
     logger.error(
         "Telegram API/network error while polling: %s", context.error, exc_info=context.error
@@ -63,7 +64,7 @@ def run_polling(env_path: str = ".env") -> None:
 
     Raises:
         MissingBotTokenError: No token is configured (fail-fast before any
-            polling attempt -- REQ-TELEGRAM-003, 015, AC-TELEGRAM-003a).
+            polling attempt -- REQ-TELEGRAM-003, REQ-TELEGRAM-015, AC-TELEGRAM-003a).
     """
     token = load_bot_token(env_path)
     base_dir = load_base_folder(env_path)

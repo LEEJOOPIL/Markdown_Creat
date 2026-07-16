@@ -3,9 +3,9 @@
 Token source priority (plan.md SS D M3 decision): the `TELEGRAM_BOT_TOKEN`
 environment variable always wins over a value in a gitignored `.env` file.
 When neither is set, `load_bot_token()` raises `MissingBotTokenError`
-immediately (REQ-TELEGRAM-003, 015 -- fail fast, never hang silently).
+immediately (REQ-TELEGRAM-003, REQ-TELEGRAM-015 -- fail fast, never hang silently).
 
-Secret discipline (REQ-TELEGRAM-012, 014): the token itself is never
+Secret discipline (REQ-TELEGRAM-012, REQ-TELEGRAM-014): the token itself is never
 returned in a masked/loggable form by this module's own log-facing helper,
 `mask_secret()`. Callers (bot.py) MUST use `mask_secret()` for any
 startup log line that would otherwise include the token.

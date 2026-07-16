@@ -1,10 +1,10 @@
 ---
 id: SPEC-TELEGRAM-001
 title: "텔레그램 → 마크다운 저장 봇"
-version: "0.1.0"
-status: draft
+version: "0.3.0"
+status: in-progress
 created: 2026-07-15
-updated: 2026-07-15
+updated: 2026-07-16
 author: manager-spec
 priority: P1
 phase: "v0.1.0 target"
@@ -22,6 +22,8 @@ tier: M
 | 버전 | 날짜 | 작성자 | 변경 내용 |
 |------|------|--------|-----------|
 | 0.1.0 | 2026-07-15 | manager-spec | 최초 초안 작성. 텔레그램 봇이 수신한 텍스트·사진·문서 메시지를 날짜 폴더 기반 `.md`로 저장. long polling, 봇 토큰 환경변수 주입, 사진 OCR(신규 범위), PDF 텍스트 추출은 SPEC-PDF-001 재사용. Tier M. |
+| 0.2.0 | 2026-07-16 | manager-spec | plan-audit 4차 반복 수정: (1) acceptance.md 8개 AC를 GEARS 패턴으로 재작성, REQ-TELEGRAM-002 신규 AC-TELEGRAM-005b 추가; (2) SPEC-PDF-001이 `status: completed`로 확인됨에 따라 관련 서술 전면 갱신(§ PDF 텍스트 추출 재사용, plan.md §A/§D/§E, acceptance.md §D.1, progress.md §E.1); (3) REQ-TELEGRAM-001/002/003/010/011/012의 shall/shall-not 복합 절을 분리(REQ-TELEGRAM-013~017 신규), REQ-TELEGRAM-008의 설정 가능성을 REQ-TELEGRAM-018(Where)로 분리; (4) plan.md M4에 `pyproject.toml` 의존성 추가 하위 단계 명시. |
+| 0.3.0 | 2026-07-16 | manager-spec | plan-audit 5차 반복(narrow-scope) 수정: (1) REQ-TELEGRAM-018(베이스 폴더 설정)에 대한 인수 기준 부재를 해소 — acceptance.md에 AC-TELEGRAM-001b 신규 추가(REQ-TELEGRAM-018, 008 커버리지); (2) REQ-TELEGRAM-006/007의 GEARS shall 절에서 특정 함수·라이브러리 리터럴(`pdf_to_markdown()`, `pytesseract`)을 제거하고 동작 서술로 재작성 — 구체 명칭은 이미 §C 제약에 기재되어 있으므로 중복 없이 그대로 유지; (3) acceptance.md AC-TELEGRAM-005b에서 정적 `.gitignore` 등록 점검을 런타임 "When the bot starts" 트리거에서 분리(§D.2 DoD 항목이 이미 해당 점검을 소유); (4) acceptance.md AC-TELEGRAM-002b의 미구현 절("shall not reimplement PDF parsing logic")에 §Exclusions 추적 참조 추가. |
 
 ---
 
@@ -37,7 +39,7 @@ tier: M
 
 ### PDF 텍스트 추출 재사용 (SPEC-PDF-001 의존)
 
-PDF/문서 첨부의 텍스트 추출은 **SPEC-PDF-001의 `pdf_to_markdown(pdf_path, output_path)` 공개 함수를 재사용**한다. 본 SPEC은 PDF 파싱 로직을 재구현하지 않는다. SPEC-PDF-001이 아직 구현되지 않았으므로 frontmatter에 `depends_on: [SPEC-PDF-001]`을 기록하여, run-phase의 Depends_on Pre-flight Check가 미충족 의존성을 사용자에게 노출(wait/override/abort)하도록 한다. (이미지 OCR은 SPEC-PDF-001이 명시적으로 제외한 범위이므로 본 SPEC에서 신규 정의한다 — §B REQ-TELEGRAM-007.)
+PDF/문서 첨부의 텍스트 추출은 **SPEC-PDF-001의 `pdf_to_markdown(pdf_path, output_path)` 공개 함수를 재사용**한다. 본 SPEC은 PDF 파싱 로직을 재구현하지 않는다. SPEC-PDF-001은 `status: completed`이며 `pdf_to_markdown(pdf_path: str, output_path: str) -> None`가 `src/markdown_creat/pdf_to_markdown.py:62`에 실제로 구현되어 있다(2026-07-16 확인). frontmatter의 `depends_on: [SPEC-PDF-001]`은 계속 유지하며, run-phase의 Depends_on Pre-flight Check는 통과할 것으로 예상된다. (이미지 OCR은 SPEC-PDF-001이 명시적으로 제외한 범위이므로 본 SPEC에서 신규 정의한다 — §B REQ-TELEGRAM-007.)
 
 기술 기반: Python 3.10+, `src/` 레이아웃(`src/markdown_creat/telegram_bot/`), 봇 라이브러리 `python-telegram-bot`, OCR `pytesseract` + Tesseract 엔진. 개발 방법론은 `quality.yaml`의 `constitution.development_mode: tdd`(RED-GREEN-REFACTOR)를 따른다.
 
@@ -47,9 +49,9 @@ PDF/문서 첨부의 텍스트 추출은 **SPEC-PDF-001의 `pdf_to_markdown(pdf_
 
 ### 봇 실행 및 연결
 
-- **REQ-TELEGRAM-001 (Ubiquitous)**: The bot shall long polling 방식으로 텔레그램 서버에서 메시지를 지속적으로 수신하며, webhook 방식을 사용하지 않는다.
-- **REQ-TELEGRAM-002 (Ubiquitous)**: The bot shall 봇 토큰을 환경변수(`TELEGRAM_BOT_TOKEN`) 또는 gitignored `.env` 파일에서 읽으며, 토큰을 소스코드에 하드코딩하거나 버전 관리에 커밋하지 않는다.
-- **REQ-TELEGRAM-003 (Event-driven / unwanted)**: When 봇 시작 시 봇 토큰이 설정되어 있지 않으면, the bot shall 어떤 설정이 누락되었는지 알리는 명확한 오류 메시지와 함께 즉시 종료(fail fast)하며, 조용히 멈추거나 무한 대기하지 않는다.
+- **REQ-TELEGRAM-001 (Ubiquitous)**: The bot shall long polling 방식으로 텔레그램 서버에서 메시지를 지속적으로 수신한다.
+- **REQ-TELEGRAM-002 (Ubiquitous)**: The bot shall 봇 토큰을 환경변수(`TELEGRAM_BOT_TOKEN`) 또는 gitignored `.env` 파일에서 읽는다.
+- **REQ-TELEGRAM-003 (Event-driven)**: When 봇 시작 시 봇 토큰이 설정되어 있지 않으면, the bot shall 어떤 설정이 누락되었는지 알리는 명확한 오류 메시지와 함께 즉시 종료한다(fail fast).
 
 ### 텍스트 메시지 처리
 
@@ -58,19 +60,28 @@ PDF/문서 첨부의 텍스트 추출은 **SPEC-PDF-001의 `pdf_to_markdown(pdf_
 ### 첨부파일 처리 (사진·문서)
 
 - **REQ-TELEGRAM-005 (Event-driven)**: When 봇이 첨부파일(사진 또는 문서)을 수신하면, the bot shall 원본 파일을 로컬 `files/` 하위 폴더에 원본 그대로 항상 저장한다.
-- **REQ-TELEGRAM-006 (Event-driven)**: When 봇이 PDF/문서 첨부를 수신하면, the bot shall 원본 저장(REQ-TELEGRAM-005)에 더해 SPEC-PDF-001의 `pdf_to_markdown()`를 재사용하여 추출한 텍스트를 해당 메시지의 `.md` 본문에 포함한다.
-- **REQ-TELEGRAM-007 (Event-driven)**: When 봇이 사진(이미지) 첨부를 수신하면, the bot shall 원본 저장(REQ-TELEGRAM-005)에 더해 이미지 내 텍스트를 OCR(`pytesseract` + Tesseract 엔진)로 추출하여 해당 메시지의 `.md` 본문에 포함한다.
+- **REQ-TELEGRAM-006 (Event-driven)**: When 봇이 PDF/문서 첨부를 수신하면, the bot shall 원본 저장(REQ-TELEGRAM-005)에 더해 SPEC-PDF-001의 마크다운 변환 기능을 재사용하여 추출한 문서 텍스트를 해당 메시지의 `.md` 본문에 포함한다(구체 함수명은 §C 제약 참조).
+- **REQ-TELEGRAM-007 (Event-driven)**: When 봇이 사진(이미지) 첨부를 수신하면, the bot shall 원본 저장(REQ-TELEGRAM-005)에 더해 이미지 내 텍스트를 OCR로 추출하여 해당 메시지의 `.md` 본문에 포함한다(구체 OCR 라이브러리명은 §C 제약 참조).
 
 ### 저장 구조
 
-- **REQ-TELEGRAM-008 (Ubiquitous)**: The bot shall 저장하는 각 메시지를 날짜 기반 폴더(`YYYY-MM-DD/`) 하위에 타임스탬프 기반 파일명(예: `YYYY-MM-DD_HHMMSS.md`)의 `.md` 파일 하나로 저장한다. 기본 베이스 폴더는 프로젝트 루트의 `telegram-notes/`이며, 설정으로 변경 가능하다.
+- **REQ-TELEGRAM-008 (Ubiquitous)**: The bot shall 저장하는 각 메시지를 날짜 기반 폴더(`YYYY-MM-DD/`) 하위에 타임스탬프 기반 파일명(예: `YYYY-MM-DD_HHMMSS.md`)의 `.md` 파일 하나로 저장하며, 기본 베이스 폴더는 프로젝트 루트의 `telegram-notes/`이다.
 - **REQ-TELEGRAM-009 (Ubiquitous)**: The bot shall 각 `.md` 파일에 최소한 메시지 타임스탬프, 발신자/채팅 컨텍스트(가용 시), 텍스트/추출 텍스트 본문을 기록하며, 첨부는 `files/`에 저장된 파일의 경로로 링크한다.
 
 ### 오류 처리 (Unwanted Behavior)
 
-- **REQ-TELEGRAM-010 (Event-driven / unwanted)**: When 텔레그램 API 또는 네트워크 오류가 발생하면, the bot shall 폴링 루프를 조용히 크래시시키지 않고 오류를 기록한 뒤 폴링을 계속한다.
-- **REQ-TELEGRAM-011 (Event-driven / unwanted)**: When OCR 또는 PDF 텍스트 추출이 실패하면, the bot shall 원본 파일 저장(REQ-TELEGRAM-005)과 "추출 실패"를 알리는 노트를 포함한 `.md` 파일을 저장하며, 메시지 전체를 잃지 않는다.
-- **REQ-TELEGRAM-012 (Ubiquitous / unwanted)**: The bot shall 봇 토큰 등 비밀 값을 저장된 `.md` 파일이나 로그에 기록하지 않는다.
+- **REQ-TELEGRAM-010 (Event-driven)**: When 텔레그램 API 또는 네트워크 오류가 발생하면, the bot shall 오류를 기록한 뒤 폴링을 계속한다.
+- **REQ-TELEGRAM-011 (Event-driven)**: When OCR 또는 PDF 텍스트 추출이 실패하면, the bot shall 원본 파일 저장(REQ-TELEGRAM-005)과 "추출 실패"를 알리는 노트를 포함한 `.md` 파일을 저장한다.
+- **REQ-TELEGRAM-012 (Unwanted)**: The bot shall not 봇 토큰 등 비밀 값을 저장된 `.md` 파일이나 로그에 기록한다.
+
+### 분리된 Unwanted / Where 요구사항 (D3, D6 — GEARS 단일 패턴 준수)
+
+- **REQ-TELEGRAM-013 (Unwanted)**: The bot shall not webhook 방식으로 메시지를 수신한다(REQ-TELEGRAM-001의 long polling 전용 제약).
+- **REQ-TELEGRAM-014 (Unwanted)**: The bot shall not 봇 토큰을 소스코드에 하드코딩하거나 버전 관리에 커밋한다(REQ-TELEGRAM-002의 안전한 토큰 주입 제약).
+- **REQ-TELEGRAM-015 (Unwanted)**: When 봇 시작 시 봇 토큰이 설정되어 있지 않으면, the bot shall not 조용히 멈추거나 무한 대기한다(REQ-TELEGRAM-003의 fail-fast 제약).
+- **REQ-TELEGRAM-016 (Unwanted)**: When 텔레그램 API 또는 네트워크 오류가 발생하면, the bot shall not 폴링 루프를 조용히 크래시시킨다(REQ-TELEGRAM-010의 지속성 제약).
+- **REQ-TELEGRAM-017 (Unwanted)**: When OCR 또는 PDF 텍스트 추출이 실패하면, the bot shall not 메시지 전체를 잃는다(REQ-TELEGRAM-011의 원본 보존 제약).
+- **REQ-TELEGRAM-018 (Where)**: Where 베이스 폴더 설정이 제공되면, the bot shall `telegram-notes/` 대신 해당 설정을 사용한다(REQ-TELEGRAM-008의 설정 가능성 제약).
 
 ---
 

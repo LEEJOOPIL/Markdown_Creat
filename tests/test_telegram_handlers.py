@@ -1,8 +1,9 @@
 """Tests for markdown_creat.telegram_bot.handlers.
 
-Covers the text/photo/document handler contracts (REQ-TELEGRAM-004~007, 009)
-and the extraction-failure fallback (REQ-TELEGRAM-005, 011, 017,
-AC-TELEGRAM-004b). External extraction calls (ocr.extract_image_text,
+Covers the text/photo/document handler contracts (REQ-TELEGRAM-004,
+REQ-TELEGRAM-005, REQ-TELEGRAM-006, REQ-TELEGRAM-007, REQ-TELEGRAM-009)
+and the extraction-failure fallback (REQ-TELEGRAM-005, REQ-TELEGRAM-011,
+REQ-TELEGRAM-017, AC-TELEGRAM-004b). External extraction calls (ocr.extract_image_text,
 extract.extract_pdf_text) are mocked; storage.py itself is exercised for
 real against tmp_path (already covered by test_telegram_storage.py).
 """

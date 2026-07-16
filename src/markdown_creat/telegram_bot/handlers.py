@@ -7,10 +7,11 @@ the `Path` of the saved `.md` note. Handlers are independent of the
 `python-telegram-bot` `Update`/`Context` types so they can be unit tested
 without a live bot -- `bot.py` adapts `Update` objects into these calls.
 
-Extraction-failure fallback (REQ-TELEGRAM-005, 011, 017, AC-TELEGRAM-004b):
-the original attachment is ALWAYS saved first; OCR/PDF extraction failure
-never causes the message or the original file to be lost -- only the note
-body records a failure note instead of extracted text.
+Extraction-failure fallback (REQ-TELEGRAM-005, REQ-TELEGRAM-011,
+REQ-TELEGRAM-017, AC-TELEGRAM-004b): the original attachment is ALWAYS
+saved first; OCR/PDF extraction failure never causes the message or the
+original file to be lost -- only the note body records a failure note
+instead of extracted text.
 """
 
 from __future__ import annotations

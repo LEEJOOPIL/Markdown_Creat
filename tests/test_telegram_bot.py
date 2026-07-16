@@ -1,8 +1,8 @@
 """Tests for markdown_creat.telegram_bot.bot.
 
-Covers REQ-TELEGRAM-001/013 (long polling only, no webhook),
-REQ-TELEGRAM-003/015 (fail-fast on missing token before polling starts),
-REQ-TELEGRAM-010/016 (API/network error logged, polling continues -- the
+Covers REQ-TELEGRAM-001, REQ-TELEGRAM-013 (long polling only, no webhook),
+REQ-TELEGRAM-003, REQ-TELEGRAM-015 (fail-fast on missing token before polling starts),
+REQ-TELEGRAM-010, REQ-TELEGRAM-016 (API/network error logged, polling continues -- the
 error handler must never itself raise).
 """
 
@@ -29,7 +29,7 @@ class _FakeContext:
 
 
 # ---------------------------------------------------------------------------
-# M3 -- API/network error handling (REQ-TELEGRAM-010, 016)
+# M3 -- API/network error handling (REQ-TELEGRAM-010, REQ-TELEGRAM-016)
 # ---------------------------------------------------------------------------
 
 
