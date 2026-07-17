@@ -11,6 +11,7 @@ phase: "v0.1.0 target"
 module: "src/markdown_creat"
 lifecycle: spec-anchored
 tags: "generation, jinja2, yaml, markdown, rendering"
+tier: S
 ---
 
 # SPEC-GEN-001 — 진행 기록 (progress.md)

@@ -124,7 +124,7 @@ manager-docs (Level 2 spec-anchored sync) updated spec.md (as-implemented annota
 
 ```yaml
 sync_complete_at: "2026-07-16"
-sync_commit_sha: "pending-backfill -- this is the commit being created; see git log for the actual SHA of the docs(SPEC-TELEGRAM-001) sync commit"
+sync_commit_sha: "15cb129"  # backfilled 2026-07-17 -- docs(SPEC-TELEGRAM-001): sync-phase documentation and completion status
 sync_status: PASS
 changelog_entry_position: "[Unreleased] > ### Added, appended after the existing SPEC-PDF-001 entry"
 frontmatter_status_transitions:

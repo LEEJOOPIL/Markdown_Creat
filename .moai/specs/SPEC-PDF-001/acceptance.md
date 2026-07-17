@@ -2,9 +2,9 @@
 id: SPEC-PDF-001
 title: "PDF → 마크다운 변환 코어 기능 — 인수 기준"
 version: "0.1.0"
-status: draft
+status: completed
 created: 2026-07-14
-updated: 2026-07-14
+updated: 2026-07-16
 author: manager-spec
 priority: P1
 phase: "v0.1.0 target"
@@ -67,9 +67,9 @@ tier: M
 
 ## §D.2 품질 게이트 / Definition of Done
 
-- [ ] AC-PDF-001a~c, AC-PDF-002a~e 전 시나리오 통과.
-- [ ] 테스트 커버리지 85% 이상 (`quality.yaml` `constitution.test_coverage_target`).
-- [ ] `ruff` 린트 무경고, `black` 포맷 준수.
-- [ ] `pytest` 전체 그린.
-- [ ] spec.md의 REQ-PDF-001~010이 각각 최소 1개 테스트로 검증됨(추적성).
-- [ ] 채택한 제목 감지 휴리스틱이 plan.md §C M2에 문서화됨(REQ-PDF-002 "문서화된 휴리스틱").
+- [x] AC-PDF-001a~c, AC-PDF-002a~e 전 시나리오 통과. **(as-implemented, 2026-07-16)** 8/8 AC PASS — 상세 검증 명령·출력은 `progress.md` §E.2 AC 매트릭스 참조.
+- [x] 테스트 커버리지 85% 이상 (`quality.yaml` `constitution.test_coverage_target`). **실제**: `pdf_to_markdown.py` 95% (76 stmts, 4 miss). 단, run-phase(2026-07-16) 당시 커버리지 수치는 `progress.md` §E.2에 기록되지 않았으므로 이 값은 **2026-07-17 사후 측정**이다 — `.venv/Scripts/python.exe -m pytest tests/test_pdf_to_markdown.py --cov=markdown_creat.pdf_to_markdown -q`.
+- [x] `ruff` 린트 무경고, `black` 포맷 준수. **실제**: `progress.md` §E.3 `new_warnings_or_lints_introduced: 0`.
+- [x] `pytest` 전체 그린. **실제**: 17 passed (`progress.md` §E.4 sync 재검증 및 2026-07-17 재확인 모두 17 passed).
+- [x] spec.md의 REQ-PDF-001~010이 각각 최소 1개 테스트로 검증됨(추적성). **실제**: REQ별 테스트 매핑이 `progress.md` §E.2 "REQ traceability"에 기록됨(10/10 커버).
+- [x] 채택한 제목 감지 휴리스틱이 문서화됨(REQ-PDF-002 "문서화된 휴리스틱"). **실제**: 채택된 휴리스틱(빈도 최다 폰트 크기를 본문으로 판정, 그보다 큰 크기를 내림차순으로 제목 레벨 1~3에 매핑)은 `plan.md` §C M2가 아니라 `progress.md` §E.2 "Design decisions made during run-phase"에 기록되어 있다 — 요구사항은 충족하나 위치가 본 DoD 항목의 원래 서술과 다르다.

@@ -81,13 +81,13 @@ Design decisions made during run-phase (per plan.md §C open points):
 
 ```yaml
 run_complete_at: "2026-07-16"
-run_commit_sha: "pending-backfill-run-close"
+run_commit_sha: "53dddd2"  # backfilled 2026-07-17 — M1-M5 단일 커밋 (feat(SPEC-PDF-001): M1-M5 PDF to Markdown core conversion (TDD))
 run_status: green
 ac_pass_count: 8
 ac_fail_count: 0
 preserve_list_post_run_count: 0
 l44_pre_commit_fetch: "0 0 (origin/master...HEAD, in-sync)"
-l44_post_push_fetch: "pending-backfill-post-push"
+l44_post_push_fetch: "unrecoverable — run-phase(2026-07-16) 당시 값이 기록되지 않았고 사후 복원 불가. 2026-07-17 확인: 53dddd2는 origin/master(1d38743)의 조상이므로 이후 시점에 push되었으나, run-phase 종료 시점의 fetch 상태는 알 수 없음."
 new_warnings_or_lints_introduced: 0
 cross_platform_build:
   windows: "N/A (Python project, no cross-platform build tags)"
@@ -99,7 +99,7 @@ m1_to_mN_commit_strategy: "single commit covering M1-M5 (RED+GREEN+REFACTOR auth
 
 ```yaml
 sync_complete_at: "2026-07-16"
-sync_commit_sha: "pending-backfill-sync-close"
+sync_commit_sha: "b19d622"  # backfilled 2026-07-17 — docs(SPEC-PDF-001): sync-phase artifacts (README.md·CHANGELOG.md 신규 생성 커밋)
 docs_updated:
   - "README.md (created)"
   - "CHANGELOG.md (created)"

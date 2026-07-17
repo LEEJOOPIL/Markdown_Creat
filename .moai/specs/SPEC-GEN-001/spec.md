@@ -11,6 +11,7 @@ phase: "v0.1.0 target"
 module: "src/markdown_creat"
 lifecycle: spec-anchored
 tags: "generation, jinja2, yaml, markdown, rendering"
+tier: S
 ---
 
 # SPEC-GEN-001 — 템플릿 기반 마크다운 생성 코어 기능
