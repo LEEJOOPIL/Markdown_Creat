@@ -4,7 +4,7 @@ title: "텔레그램 → 마크다운 저장 봇 — 진행 기록"
 version: "0.3.0"
 status: completed
 created: 2026-07-15
-updated: 2026-07-16
+updated: 2026-07-18
 author: manager-spec
 priority: P1
 phase: "v0.1.0 target"
@@ -133,3 +133,15 @@ frontmatter_status_transitions:
   acceptance_md: "in-progress -> completed"
   progress_md: "in-progress -> completed"
 ```
+
+## §G Post-completion Incident Log
+
+> Fresh top-level section per `.claude/rules/moai/development/spec-frontmatter-schema.md` § progress.md Section Map (Section-letter allocation rule: new concerns claim a fresh top-level letter and MUST NOT overload `§E`/`§E.N`; retired `§E.5` is not reused). `status:`/`version:`는 변경하지 않음(`completed` 유지).
+
+### Post-completion incident: httpx token leak (2026-07-16)
+
+- **증상/분류**: sync 완료 이후 라이브 스모크 테스트에서 봇 토큰이 로그에 raw로 노출됨 (REQ-TELEGRAM-012 위반: "봇 토큰 등 비밀 값을 저장된 `.md` 파일이나 로그에 기록하지 않는다").
+- **근본 원인**: `httpx`가 요청 URL 전체를 INFO 레벨로 기록하고 `python-telegram-bot`이 그 URL에 봇 토큰을 담아, `bot.py`의 `mask_secret()` 마스킹 경로를 우회함. 애플리케이션 자체 로그 라인은 이미 토큰을 마스킹했으나 httpx의 요청 로그는 그 마스킹을 거치지 않았다.
+- **수정**: commit `1d38743` — 진입점 `src/markdown_creat/telegram_bot/__main__.py:22`에서 `logging.getLogger("httpx").setLevel(logging.WARNING)`로 httpx INFO 로깅을 억제. 소스 변경 없음(가드만 추가).
+- **AC 검증 공백**: AC-TELEGRAM-005a는 §E.2 매트릭스에서 PASS로 기록되었으나, 원 검증(`test_bot_token_never_referenced_by_handlers_storage_ocr_extract_modules`, `test_mask_secret_never_exposes_full_token`)은 httpx 로깅 경로를 실행하지 않아 실제 위반을 놓쳤다.
+- **공백 폐쇄**: `tests/test_telegram_main.py::test_main_suppresses_httpx_info_logging_to_prevent_token_leak` 회귀 가드 추가 — `main()` 실행 후 httpx 로거의 `.level == logging.WARNING`을 검증하며, 억제 줄(`__main__.py:22`) 제거 시 실패한다. 이로써 AC-TELEGRAM-005a가 httpx 경로까지 커버.

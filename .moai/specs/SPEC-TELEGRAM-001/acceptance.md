@@ -4,7 +4,7 @@ title: "텔레그램 → 마크다운 저장 봇 — 인수 기준"
 version: "0.3.0"
 status: completed
 created: 2026-07-15
-updated: 2026-07-16
+updated: 2026-07-18
 author: manager-spec
 priority: P1
 phase: "v0.1.0 target"
@@ -45,6 +45,7 @@ tier: M
 
 ### AC-TELEGRAM-005a — 비밀 값 비기록 (REQ-TELEGRAM-012)
 - When the bot processes and records a message (saving `.md` and writing logs), the bot shall not include secret values such as the bot token in the saved `.md` file or in logs.
+- The "logs" scope explicitly includes third-party library logging: the `httpx` request logger (which python-telegram-bot routes token-bearing request URLs through) shall be suppressed to WARNING at the entry point so the token never reaches INFO-level logs. Verified by `tests/test_telegram_main.py::test_main_suppresses_httpx_info_logging_to_prevent_token_leak` (regression guard added 2026-07-18 after a post-completion incident — see `progress.md §G`), in addition to the module-reference and mask_secret checks.
 
 ### AC-TELEGRAM-005b — 토큰 환경변수/`.env` 소스 및 미노출 (REQ-TELEGRAM-002, 014)
 - When the bot starts, the bot shall read the bot token from the `TELEGRAM_BOT_TOKEN` environment variable or a gitignored `.env` file; the bot shall not hardcode the token literal in source code or commit it to version control. (정적 `.env`/`.gitignore` 등록 점검은 런타임 트리거가 아니므로 §D.2 DoD 체크리스트 항목으로 분리 소유.)

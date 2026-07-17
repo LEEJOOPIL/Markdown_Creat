@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Security
+
+- **Telegram 봇 토큰 로그 노출 차단** (SPEC-TELEGRAM-001, REQ-TELEGRAM-012):
+  `httpx`가 요청 URL 전체를 INFO 레벨로 기록하고 `python-telegram-bot`은 그 URL에
+  봇 토큰을 담기 때문에 raw 토큰이 로그에 남던 문제를 수정. 진입점
+  (`telegram_bot/__main__.py`)에서 `httpx` 로거를 WARNING 레벨로 낮춰 억제한다.
+  sync 이후 라이브 스모크 테스트 중 발견되었으며, 회귀 방지 테스트로 가드한다.
+
 ### Added
 
 - `pdf_to_markdown(pdf_path, output_path)` (SPEC-PDF-001): converts a PDF file

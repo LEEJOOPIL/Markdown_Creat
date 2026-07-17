@@ -4,7 +4,7 @@ title: "텔레그램 → 마크다운 저장 봇"
 version: "0.3.0"
 status: completed
 created: 2026-07-15
-updated: 2026-07-16
+updated: 2026-07-18
 author: manager-spec
 priority: P1
 phase: "v0.1.0 target"
@@ -25,6 +25,7 @@ tier: M
 | 0.2.0 | 2026-07-16 | manager-spec | plan-audit 4차 반복 수정: (1) acceptance.md 8개 AC를 GEARS 패턴으로 재작성, REQ-TELEGRAM-002 신규 AC-TELEGRAM-005b 추가; (2) SPEC-PDF-001이 `status: completed`로 확인됨에 따라 관련 서술 전면 갱신(§ PDF 텍스트 추출 재사용, plan.md §A/§D/§E, acceptance.md §D.1, progress.md §E.1); (3) REQ-TELEGRAM-001/002/003/010/011/012의 shall/shall-not 복합 절을 분리(REQ-TELEGRAM-013~017 신규), REQ-TELEGRAM-008의 설정 가능성을 REQ-TELEGRAM-018(Where)로 분리; (4) plan.md M4에 `pyproject.toml` 의존성 추가 하위 단계 명시. |
 | 0.3.0 | 2026-07-16 | manager-spec | plan-audit 5차 반복(narrow-scope) 수정: (1) REQ-TELEGRAM-018(베이스 폴더 설정)에 대한 인수 기준 부재를 해소 — acceptance.md에 AC-TELEGRAM-001b 신규 추가(REQ-TELEGRAM-018, 008 커버리지); (2) REQ-TELEGRAM-006/007의 GEARS shall 절에서 특정 함수·라이브러리 리터럴(`pdf_to_markdown()`, `pytesseract`)을 제거하고 동작 서술로 재작성 — 구체 명칭은 이미 §C 제약에 기재되어 있으므로 중복 없이 그대로 유지; (3) acceptance.md AC-TELEGRAM-005b에서 정적 `.gitignore` 등록 점검을 런타임 "When the bot starts" 트리거에서 분리(§D.2 DoD 항목이 이미 해당 점검을 소유); (4) acceptance.md AC-TELEGRAM-002b의 미구현 절("shall not reimplement PDF parsing logic")에 §Exclusions 추적 참조 추가. |
 | 0.3.0 (as-implemented, sync) | 2026-07-16 | manager-docs | run-phase 구현 완료(M1~M6, 10/10 AC PASS, 96% 커버리지). §C 기술 접근에 as-implemented 주석 추가: 계획된 8개 모듈에 더해 `dispatch.py`(Update→handlers.py 어댑터 계층)가 스코프 내부 드리프트로 추가됨(신규 외부 의존성 없음, 이미 승인된 `telegram_bot/` 서브패키지 내부). status: in-progress → completed. |
+| 0.3.0 (post-completion security guard) | 2026-07-18 | orchestrator | 완료 후 라이브 스모크 테스트에서 발견된 REQ-TELEGRAM-012 위반 기록: `httpx`가 요청 URL 전체를 INFO 레벨로 기록하고 `python-telegram-bot`이 그 URL에 봇 토큰을 담아, `bot.py`의 `mask_secret()` 마스킹을 우회해 raw 토큰이 로그에 노출됨. commit `1d38743`이 진입점(`__main__.py:22`)에서 httpx INFO 로깅을 억제하여 수정. 이 수정에는 원래 회귀 테스트가 없었고 AC-TELEGRAM-005a의 원 검증도 httpx 경로를 실행하지 않아 위반을 놓쳤으므로, `tests/test_telegram_main.py`에 회귀 가드를 추가하고 AC-TELEGRAM-005a 서술을 로그 경로(httpx 요청 로깅 포함)까지 명시하도록 보강. 요구사항 자체(REQ-TELEGRAM-012)는 불변이며 status: completed 유지 — 앰언드먼트 아님. 상세: `progress.md §G`, `CHANGELOG.md ### Security`. |
 
 ---
 
