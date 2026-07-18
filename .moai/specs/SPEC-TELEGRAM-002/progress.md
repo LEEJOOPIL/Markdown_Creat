@@ -55,13 +55,13 @@ TDD 사이클(RED-GREEN-REFACTOR)로 `save_attachment()`의 경로 순회 취약
 
 ```yaml
 run_complete_at: "2026-07-18T08:39:06Z"
-run_commit_sha: "pending-backfill-M1"  # self-referential hazard: this commit cannot know its own SHA; backfilled in a follow-up commit per spec-frontmatter-schema.md SHA placeholder pattern
+run_commit_sha: "eaf2bb35289f0ff0b474ce2a9a3a63dcda4919aa"  # backfilled post-commit per spec-frontmatter-schema.md SHA placeholder pattern
 run_status: PASS
 ac_pass_count: 4          # AC-TELEGRAM-019a, 019b, 019c, 019d
 ac_fail_count: 0
 preserve_list_post_run_count: 5  # note_dir, note_filename, note_path, render_note, save_note -- all unmodified, verified via full regression pass
 l44_pre_commit_fetch: "N/A -- single-agent direct-to-master TDD milestone, no parallel Agent() sub-spawn requiring the pre-spawn sync-check batch; git branch/HEAD verified in Section C pre-flight instead"
-l44_post_push_fetch: "N/A -- push not yet executed at time of writing; will run as part of M3 push step below"
+l44_post_push_fetch: "N/A -- single-agent direct-to-master TDD milestone, no parallel Agent() sub-spawn requiring the post-push fetch check"
 new_warnings_or_lints_introduced: 0  # ruff check + black --check both clean
 cross_platform_build:
   applicable: false
