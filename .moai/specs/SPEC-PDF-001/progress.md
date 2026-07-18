@@ -183,7 +183,7 @@ spec.md/progress.md frontmatter 상태를 `in-progress` → `completed`로 전�
 
 ```yaml
 sync_complete_at: "2026-07-19"
-sync_commit_sha: "pending-backfill-sync-v0.2.0"  # follow-up chore commit backfills the real SHA
+sync_commit_sha: "c0ee1801"  # backfilled — docs(SPEC-PDF-001): sync-phase artifacts + 3-phase close (v0.2.0 OCR fallback)
 docs_updated:
   - "README.md (OCR fallback description, PDFOCRFailedError, Out of Scope, Project Status)"
   - "CHANGELOG.md ([Unreleased] Added — v0.2.0 OCR fallback entry + stale note update)"
