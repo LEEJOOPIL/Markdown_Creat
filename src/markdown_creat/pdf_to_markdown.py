@@ -23,6 +23,8 @@ from collections import Counter
 
 import fitz
 
+from markdown_creat.ocr import OcrError, extract_pdf_text_via_ocr
+
 __all__ = [
     "pdf_to_markdown",
     "MarkdownConversionError",
@@ -30,6 +32,7 @@ __all__ = [
     "PDFCorruptedError",
     "PDFEncryptedError",
     "PDFNoTextError",
+    "PDFOCRFailedError",
 ]
 
 _MAX_HEADING_LEVEL = 3
@@ -52,7 +55,13 @@ class PDFEncryptedError(MarkdownConversionError):
 
 
 class PDFNoTextError(MarkdownConversionError):
-    """Raised when the PDF contains no extractable text (e.g. scanned/image-only)."""
+    """Raised when the PDF contains no extractable text (e.g. scanned/image-only),
+    including when the automatic OCR fallback also finds no recoverable text."""
+
+
+class PDFOCRFailedError(MarkdownConversionError):
+    """Raised when the automatic OCR fallback engine itself fails (e.g. Tesseract
+    not installed, missing language pack, page rendering failure)."""
 
 
 # @MX:ANCHOR: [AUTO] Public API boundary -- the sole entry point all future
@@ -71,7 +80,16 @@ def pdf_to_markdown(pdf_path: str, output_path: str) -> None:
         PDFNotFoundError: No file exists at `pdf_path`.
         PDFCorruptedError: The file exists but cannot be parsed as a PDF.
         PDFEncryptedError: The PDF is password-protected.
-        PDFNoTextError: No extractable text was found in the PDF.
+        PDFNoTextError: No extractable text was found in the PDF, even after
+            the automatic OCR fallback (see below) was attempted.
+        PDFOCRFailedError: The automatic OCR fallback engine itself failed
+            (e.g. Tesseract not installed, missing language pack).
+
+    When the PDF has no text layer (e.g. a scanned/image-only PDF), this
+    function automatically falls back to OCR (`markdown_creat.ocr`, Korean +
+    English) before raising `PDFNoTextError` (REQ-PDF-009 amended, REQ-PDF-011,
+    REQ-PDF-012). OCR-derived text has no heading structure -- it is written
+    as plain paragraph text only.
 
     On any error, no file is written or modified at `output_path` -- the
     Markdown string is fully assembled in memory before the output file
@@ -95,9 +113,31 @@ def pdf_to_markdown(pdf_path: str, output_path: str) -> None:
         document.close()
 
     if markdown_text is None:
-        raise PDFNoTextError(f"No extractable text found in PDF: {pdf_path}")
+        markdown_text = _ocr_fallback_markdown(pdf_path)
 
     _write_markdown_file(output_path, markdown_text)
+
+
+def _ocr_fallback_markdown(pdf_path: str) -> str:
+    """Attempt OCR extraction for a PDF with no text layer (REQ-PDF-009/011/012).
+
+    The returned text carries no heading structure -- OCR output has no font
+    size metadata to detect headings from (acceptance.md SS D.1).
+
+    Raises:
+        PDFOCRFailedError: The OCR engine itself failed.
+        PDFNoTextError: OCR completed without error but found no recoverable
+            text (empty or whitespace-only result).
+    """
+    try:
+        ocr_text = extract_pdf_text_via_ocr(pdf_path, lang="kor+eng")
+    except OcrError as exc:
+        raise PDFOCRFailedError(f"OCR fallback failed for PDF: {pdf_path}: {exc}") from exc
+
+    if not ocr_text.strip():
+        raise PDFNoTextError(f"No extractable text found in PDF: {pdf_path}")
+
+    return ocr_text.strip() + "\n"
 
 
 def _write_markdown_file(output_path: str, markdown_text: str) -> None:

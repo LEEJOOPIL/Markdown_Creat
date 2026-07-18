@@ -8,6 +8,8 @@ genuinely external systems, of which this SPEC has none.
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import fitz
 import pytest
 
@@ -16,6 +18,7 @@ from markdown_creat.pdf_to_markdown import (
     PDFEncryptedError,
     PDFNoTextError,
     PDFNotFoundError,
+    PDFOCRFailedError,
     pdf_to_markdown,
 )
 
@@ -256,13 +259,16 @@ def test_pdf_to_markdown_raises_clear_error_for_encrypted_pdf(tmp_path):
 
 
 def test_pdf_to_markdown_raises_clear_error_when_no_extractable_text(tmp_path):
+    """v0.2.0: OCR fallback also finds no text -> PDFNoTextError is preserved."""
     no_text_path = tmp_path / "no_text.pdf"
     make_no_text_pdf(str(no_text_path))
     output_path = tmp_path / "out.md"
 
-    with pytest.raises(PDFNoTextError):
-        pdf_to_markdown(str(no_text_path), str(output_path))
+    with patch("markdown_creat.ocr.pytesseract.image_to_string", return_value=""):
+        with pytest.raises(PDFNoTextError) as exc_info:
+            pdf_to_markdown(str(no_text_path), str(output_path))
 
+    assert str(no_text_path) in str(exc_info.value)
     assert not output_path.exists()
 
 
@@ -290,8 +296,13 @@ def test_pdf_to_markdown_never_leaves_partial_output_on_error(tmp_path, builder_
         make_no_text_pdf(str(pdf_path))
         expected_exc = PDFNoTextError
 
-    with pytest.raises(expected_exc):
-        pdf_to_markdown(str(pdf_path), str(output_path))
+    if builder_name == "no_text":
+        with patch("markdown_creat.ocr.pytesseract.image_to_string", return_value=""):
+            with pytest.raises(expected_exc):
+                pdf_to_markdown(str(pdf_path), str(output_path))
+    else:
+        with pytest.raises(expected_exc):
+            pdf_to_markdown(str(pdf_path), str(output_path))
 
     assert not output_path.exists()
 
@@ -326,3 +337,82 @@ def test_pdf_to_markdown_creates_missing_parent_directory(tmp_path):
     pdf_to_markdown(str(pdf_path), str(output_path))
 
     assert output_path.exists()
+
+
+# ---------------------------------------------------------------------------
+# v0.2.0 amendment -- OCR automatic fallback (AC-PDF-003a~d, REQ-PDF-009/011/012)
+# ---------------------------------------------------------------------------
+
+
+def test_pdf_to_markdown_ocr_fallback_succeeds_for_scanned_pdf(tmp_path):
+    """AC-PDF-003a: scanned PDF + OCR finds text -> success, no PDFNoTextError."""
+    no_text_path = tmp_path / "scanned.pdf"
+    make_no_text_pdf(str(no_text_path))
+    output_path = tmp_path / "scanned.md"
+
+    with patch(
+        "markdown_creat.ocr.pytesseract.image_to_string",
+        return_value="Hello from OCR",
+    ) as mock_ocr:
+        pdf_to_markdown(str(no_text_path), str(output_path))
+
+    assert output_path.exists()
+    content = output_path.read_text(encoding="utf-8")
+    assert "Hello from OCR" in content
+    mock_ocr.assert_called_once()
+    assert mock_ocr.call_args.kwargs.get("lang") == "kor+eng"
+
+
+def test_pdf_to_markdown_ocr_fallback_finds_no_text_raises_pdfnotext(tmp_path):
+    """AC-PDF-003b: scanned PDF + OCR also finds no text -> PDFNoTextError (same as v0.1.0)."""
+    no_text_path = tmp_path / "blank_scan.pdf"
+    make_no_text_pdf(str(no_text_path))
+    output_path = tmp_path / "blank_scan.md"
+
+    with patch("markdown_creat.ocr.pytesseract.image_to_string", return_value=""):
+        with pytest.raises(PDFNoTextError) as exc_info:
+            pdf_to_markdown(str(no_text_path), str(output_path))
+
+    assert str(no_text_path) in str(exc_info.value)
+    assert not output_path.exists()
+
+
+def test_pdf_to_markdown_ocr_engine_failure_raises_pdfocrfailederror(tmp_path):
+    """AC-PDF-003c: OCR engine error -> PDFOCRFailedError wrapping the original message."""
+    no_text_path = tmp_path / "scanned.pdf"
+    make_no_text_pdf(str(no_text_path))
+    output_path = tmp_path / "scanned.md"
+
+    with patch(
+        "markdown_creat.ocr.pytesseract.image_to_string",
+        side_effect=RuntimeError("tesseract is not installed"),
+    ):
+        with pytest.raises(PDFOCRFailedError) as exc_info:
+            pdf_to_markdown(str(no_text_path), str(output_path))
+
+    assert "tesseract is not installed" in str(exc_info.value)
+    assert not output_path.exists()
+
+
+def test_pdf_to_markdown_text_layer_pdf_never_calls_ocr(tmp_path):
+    """AC-PDF-003d: a text-bearing PDF never reaches the OCR fallback (regression guard)."""
+    pdf_path = tmp_path / "simple.pdf"
+    output_path = tmp_path / "simple.md"
+    make_pdf(
+        str(pdf_path),
+        pages=[
+            [
+                [
+                    ("This is the first line of body text.", 11),
+                    ("This is the second line of the same paragraph.", 11),
+                ]
+            ]
+        ],
+    )
+
+    with patch("markdown_creat.ocr.pytesseract.image_to_string") as mock_ocr:
+        pdf_to_markdown(str(pdf_path), str(output_path))
+
+    mock_ocr.assert_not_called()
+    content = output_path.read_text(encoding="utf-8")
+    assert "This is the first line of body text." in content

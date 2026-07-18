@@ -1,17 +1,19 @@
 ---
 id: SPEC-PDF-001
 title: "PDF → 마크다운 변환 코어 기능 — 진행 기록"
-version: "0.1.0"
-status: completed
+version: "0.2.0"
+status: in-progress
 created: 2026-07-14
-updated: 2026-07-16
+updated: 2026-07-19
 author: manager-spec
 priority: P1
-phase: "v0.1.0 target"
+phase: "v0.2.0 target"
 module: "src/markdown_creat"
 lifecycle: spec-anchored
-tags: "pdf, markdown, extraction, pymupdf, conversion"
+tags: "pdf, markdown, extraction, pymupdf, conversion, ocr"
 tier: M
+amendment_of: SPEC-PDF-001
+depends_on: [SPEC-OCR-001]
 ---
 
 # SPEC-PDF-001 — 진행 기록 (progress.md)
@@ -77,6 +79,52 @@ Design decisions made during run-phase (per plan.md §C open points):
 - **Missing parent directory** (plan.md §D open risk): auto-create via
   `os.makedirs(..., exist_ok=True)` rather than raising an error.
 
+### v0.2.0 앰언드먼트 — OCR 자동 폴백 통합 (Run-phase Evidence)
+
+plan.md §F의 M1~M5(TDD RED-GREEN-REFACTOR)를 그대로 구현. `pdf_to_markdown.py`에
+`PDFOCRFailedError(MarkdownConversionError)` 신설(`__all__`에 추가), `_build_markdown()`이
+`None`을 반환하는 지점(텍스트 레이어 없음)을 신규 헬퍼 `_ocr_fallback_markdown()` 호출로
+대체 — `document.close()` 이후(기존 `finally` 블록 밖)에 호출되어 plan.md §F.3 M2의
+순서 요구사항을 만족한다. `markdown_creat.ocr.extract_pdf_text_via_ocr()`는 원본 그대로
+재사용(수정 없음 — 아래 diff 확인 참조), `lang="kor+eng"` 리터럴 고정(REQ-PDF-012, 새 공개
+파라미터 미노출).
+
+| AC | Status | Verification Command | Actual Output |
+|----|--------|----------------------|----------------|
+| AC-PDF-003a (스캔 PDF, OCR 성공) | PASS | `pytest -k test_pdf_to_markdown_ocr_fallback_succeeds_for_scanned_pdf -v` | `PASSED` |
+| AC-PDF-003b (스캔 PDF, OCR도 텍스트 없음) | PASS | `pytest -k test_pdf_to_markdown_ocr_fallback_finds_no_text_raises_pdfnotext -v` | `PASSED` |
+| AC-PDF-003c (OCR 엔진 오류 → PDFOCRFailedError) | PASS | `pytest -k test_pdf_to_markdown_ocr_engine_failure_raises_pdfocrfailederror -v` | `PASSED` |
+| AC-PDF-003d (텍스트 PDF는 OCR 미호출, 회귀 없음) | PASS | `pytest -k test_pdf_to_markdown_text_layer_pdf_never_calls_ocr -v` | `PASSED` |
+
+기존 테스트 조정(plan.md §F.3 M3): `test_pdf_to_markdown_raises_clear_error_when_no_extractable_text`
+및 `test_pdf_to_markdown_never_leaves_partial_output_on_error[no_text]`를
+`markdown_creat.ocr.pytesseract.image_to_string` 빈 문자열(`""`) 모킹으로 갱신 —
+assertion 자체(`pytest.raises(PDFNoTextError)`, `not output_path.exists()`)는 변경 없음.
+
+REQ traceability 추가: REQ-PDF-009(개정, "텍스트 레이어에도 OCR에도 텍스트 없음"으로
+의미 확장) → 위 2개 조정 테스트 + AC-PDF-003b; REQ-PDF-011(OCR 엔진 오류 시맨틱) →
+AC-PDF-003c; REQ-PDF-012(OCR 언어 `kor+eng` 리터럴 고정) → AC-PDF-003a의
+`mock_ocr.call_args.kwargs.get("lang") == "kor+eng"` assertion; REQ-PDF-013(다중 페이지
+병합)은 기존 `test_pdf_to_markdown_multi_page_merges_into_single_md_in_page_order`로
+이미 검증됨(v0.2.0에서 신규 테스트 불필요, 재확인만).
+
+전체 회귀: `pytest tests/ -v` 94 passed (기존 v0.1.0 17개 + telegram_bot/ocr 관련 기존
+77개 전체 무수정 그린, 신규 4개 포함). 커버리지: `pdf_to_markdown.py` 95%(86 stmts, 4 miss
+— 라인 159/164/167/186, 기존 `_classify_heading_levels`/`_build_markdown`의 도달 불가
+방어 분기, v0.2.0 신규 분기와 무관). 린트: `ruff check` 무경고, `black --check` 무수정.
+
+`ocr.py` 재사용 확인(diff): `git diff --stat src/markdown_creat/ocr.py` → 무출력(변경 없음).
+`telegram_bot/*` 재확인: `git status --porcelain`에 미포함(무수정) — 브리지 계층을 통해
+효과가 투명하게 전파됨(수정 불필요).
+
+설계 결정(v0.2.0, plan.md §F.2에서 이미 확정된 4개 결정을 그대로 구현, 재논의 없음):
+- 통합 지점: `pdf_to_markdown()` 내부(결정 1). `extract.py` 브리지 계층은 수정하지 않음.
+- 오류 시맨틱: OCR 엔진 오류 → `PDFOCRFailedError`(신규), OCR 완료 후 텍스트 없음 →
+  기존 `PDFNoTextError` 재사용(결정 2). 원본 `OcrError` 메시지가 감싸는 메시지에 보존됨
+  (`f"OCR fallback failed for PDF: {pdf_path}: {exc}"`).
+- 페이지 수/타임아웃 상한 없음(결정 3, YAGNI 적용, 잔여 위험으로 문서화).
+- OCR 언어 `kor+eng` 리터럴 고정(결정 4).
+
 ## §E.3 Run-phase Audit-Ready Signal
 
 ```yaml
@@ -93,6 +141,22 @@ cross_platform_build:
   windows: "N/A (Python project, no cross-platform build tags)"
 total_run_phase_files: 4
 m1_to_mN_commit_strategy: "single commit covering M1-M5 (RED+GREEN+REFACTOR authored in one continuous session; no RED state was ever pushed to master)"
+```
+
+### v0.2.0 앰언드먼트 — Run-phase Audit-Ready Signal (addendum)
+
+```yaml
+run_complete_at: "2026-07-19"
+run_commit_sha: "pending-backfill-v0.2.0"  # to be backfilled after commit lands
+run_status: green
+ac_pass_count: 4  # AC-PDF-003a~d (신규); 기존 8 AC(v0.1.0)도 전체 재확인 PASS, 회귀 없음
+ac_fail_count: 0
+preserve_list_post_run_count: 0  # ocr.py, telegram_bot/* 모두 무수정 확인됨
+new_warnings_or_lints_introduced: 0
+cross_platform_build:
+  windows: "N/A (Python project, no cross-platform build tags)"
+total_run_phase_files: 2  # src/markdown_creat/pdf_to_markdown.py, tests/test_pdf_to_markdown.py
+m1_to_mN_commit_strategy: "single commit covering M1-M5 (RED tests + GREEN implementation authored together, per Tier M plan.md §F.3 milestones)"
 ```
 
 ## §E.4 Sync-phase Audit-Ready Signal
