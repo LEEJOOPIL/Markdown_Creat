@@ -2,7 +2,7 @@
 id: SPEC-TELEGRAM-003
 title: "텔레그램 봇 Windows 더블클릭 실행기 (.bat launcher)"
 version: "0.1.1"
-status: in-progress
+status: completed
 created: 2026-07-18
 updated: 2026-07-18
 author: manager-spec

@@ -113,6 +113,11 @@ extraction failures preserve the original attachment with a failure note) and
 explicitly out-of-scope items (auto-start/OS service registration, webhook
 mode, access control/allowlist, note browsing UI, cloud sync).
 
+On Windows, double-click `run_telegram_bot.bat` at the project root to start
+the bot without opening a terminal (SPEC-TELEGRAM-003). It anchors to its own
+location, checks for `.venv\Scripts\python.exe` before launching, and keeps
+the console window open after exit so any error is visible.
+
 ## Development
 
 ```bash

@@ -2,7 +2,7 @@
 id: SPEC-TELEGRAM-003
 title: "텔레그램 봇 Windows 더블클릭 실행기 — 진행 기록"
 version: "0.1.1"
-status: in-progress
+status: completed
 created: 2026-07-18
 updated: 2026-07-18
 author: manager-spec
@@ -76,4 +76,16 @@ m1_to_mN_commit_strategy: "single M1 commit covering M1-M4 (UX wording + venv ch
 
 ## §E.4 Sync-phase Audit-Ready Signal
 
-_<pending sync-phase>_
+```yaml
+sync_complete_at: "2026-07-18T00:00:00+09:00"
+sync_commit_sha: "pending-backfill-sync"
+sync_status: "completed"
+changelog_entry_position: "CHANGELOG.md [Unreleased] > ### Added, after the SPEC-OCR-001 entry"
+frontmatter_status_transitions:
+  spec_md: "in-progress -> completed"
+  plan_md: "in-progress -> completed"
+  acceptance_md: "in-progress -> completed"
+  progress_md: "in-progress -> completed"
+```
+
+Sync-phase 산출물: `CHANGELOG.md` `[Unreleased]` → `### Added`에 SPEC-TELEGRAM-003 항목 신설(중복 없음, 사전 `grep -c 'TELEGRAM-003' CHANGELOG.md` → 0 확인 후 작성); `README.md` "Telegram bot usage" 섹션에 `run_telegram_bot.bat` 사용법 2줄 추가(M6, 선택적 산출물); spec.md/plan.md/acceptance.md/progress.md 4개 아티팩트의 frontmatter `status:`를 `in-progress → completed`로 병합 전환(단일 sync 커밋, 별도 Mx 커밋 없음). `sync_commit_sha`는 본 sync 커밋 자신의 SHA를 커밋 이전에는 알 수 없으므로 `pending-backfill-sync` placeholder를 기록하며, 후속 backfill 커밋에서 실제 SHA로 갱신 예정(SPEC-TELEGRAM-002에서 이미 사용된 관례와 동일).

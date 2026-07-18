@@ -94,3 +94,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     함수로 미리 제공되었으나 아직 호출자가 없다.
   - 10/10 인수 기준 통과, `ocr.py` 테스트 커버리지 100%, 전체 테스트
     스위트 84/84 그린(기존 대비 회귀 없음).
+- **텔레그램 봇 Windows 더블클릭 실행기** (`run_telegram_bot.bat`,
+  SPEC-TELEGRAM-003): 터미널을 열지 않고도 Windows 탐색기에서 더블클릭만으로
+  기존 텔레그램 봇(`python -m markdown_creat.telegram_bot`, SPEC-TELEGRAM-001)을
+  실행할 수 있는 배치 파일 실행기를 프로젝트 루트에 추가. 봇 코어 로직이나
+  토큰 로딩 로직(`config.py`)은 전혀 수정하지 않는 순수 실행기 레이어이다.
+  - `%~dp0` 확장 변수로 자기 자신의 파일 위치로 작업 디렉토리를 고정(cwd
+    앵커링)하여, 바탕화면 바로가기 등 어느 위치에서 실행해도 프로젝트 루트를
+    기준으로 동일하게 동작한다.
+  - venv 사전 점검: `.venv\Scripts\python.exe`가 없으면 평이한 언어의 오류
+    메시지와 함께 봇 모듈을 호출하지 않고 즉시 실패(fail-fast)하며, 0이 아닌
+    종료 코드로 종료한다.
+  - 시스템 PATH에 의존하는 bare `python` 호출 없이 항상 venv 전용 Python
+    인터프리터(`.venv\Scripts\python.exe`)로만 봇 모듈을 호출하며, 표준출력/
+    표준오류를 가로채거나 억제하지 않는다.
+  - 봇은 항상 launcher가 연 콘솔 창의 foreground에서 실행되며(OS 자동 시작·
+    서비스 등록·백그라운드 데몬화 없음), 정상/비정상 종료 또는 venv 부재
+    실패 등 모든 종료 경로 끝에서 `pause`로 콘솔 창을 유지해 출력을 읽을 수
+    있게 한다.
+  - 6개 인수 기준(AC-TELEGRAM-024a/027a/027b/030s/033s/034s) 중 3개
+    (bare `python` 미사용, OS 자동 시작 미등록, 포그라운드 전용 실행)와
+    venv 부재 시나리오(AC-TELEGRAM-027a)는 정적 스크립트 검토 및 스크래치
+    복사본 실 실행으로 독립 검증되어 PASS. 정상 실행 경로(AC-TELEGRAM-024a)와
+    토큰 부재 경로(AC-TELEGRAM-027b)는 실제 대화형 Windows 더블클릭 세션이
+    필요한 long-polling 블로킹 특성상 자동화 에이전트가 끝까지 실행할 수
+    없어, 명령·인자·출력 무리다이렉트를 라인 단위로 대조하는 정적 검토로만
+    검증되었다 — `acceptance.md`의 Definition of Done에 따라 사람의 실제
+    더블클릭 1회 검증이 남아 있다(예정된 잔여 검증이며 결함이 아님).
+  - 신규 Python 소스 코드 변경, 신규 의존성 추가, 기존 테스트 스위트 회귀
+    없음(`src/` 무변경 확인, 37개 텔레그램 관련 테스트 전부 통과).
