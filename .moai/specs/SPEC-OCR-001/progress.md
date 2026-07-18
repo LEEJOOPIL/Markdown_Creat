@@ -120,6 +120,8 @@ Deferred-work pointer: `spec.md` §Exclusions carries the forward reference to S
 - summary: 10/10 AC PASS (AC-OCR-001a~c, 002a~b, 003a~c, 005a, 006a); full suite 84/84 green (0 regressions vs 71-test baseline); coverage `src/markdown_creat/ocr.py` 100% (target 85%); `ruff` clean; `pdf_to_markdown.py` untouched per SPEC scope boundary.
 - artifacts_synced: CHANGELOG.md (`[Unreleased]` § Added, new SPEC-OCR-001 entry), README.md (spot-checked, no correction needed — manager-develop's edits verified accurate against `ocr.py`/`handlers.py`), spec.md/plan.md/acceptance.md frontmatter (`in-progress` → `completed`, `updated: 2026-07-18`)
 - sync_commit_sha: 839acd3
+- sync-auditor final-pass verdict (harness=standard, `evaluator_mode: final-pass`): **PASS 97.7/100** — Functionality 98, Security 92, Craft 100, Consistency 100. All claims independently re-run (fresh `pytest -q`, fresh coverage, fresh `ruff`/`black`, fresh `git diff --stat` scope check) — not trusted from prior agent reports.
+- Follow-up (tracked, NOT blocking this SPEC): sync-auditor finding F1 — `telegram_bot/storage.py:101` `save_attachment()` concatenates the Telegram-supplied filename into the file path with no sanitization (path-traversal-adjacent). This file is pre-existing SPEC-TELEGRAM-001 code, untouched by SPEC-OCR-001 (absent from `git diff --stat`). Recommend a small follow-up SPEC/fix, out of this SPEC's scope.
 
 ## §F Phase 4 Mode Selection
 
