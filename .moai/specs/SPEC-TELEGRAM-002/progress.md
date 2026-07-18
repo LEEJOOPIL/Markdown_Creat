@@ -74,7 +74,7 @@ m1_to_mN_commit_strategy: "single combined commit for M1(RED)+M2(GREEN)+M3(REFAC
 
 ```yaml
 sync_complete_at: "2026-07-18T08:45:00Z"
-sync_commit_sha: "pending-backfill-sync"  # backfilled post-commit per spec-frontmatter-schema.md SHA placeholder pattern
+sync_commit_sha: "d1f5ba8080542ca46bb0b87312d39fc2ecf0c034"  # backfilled post-commit per spec-frontmatter-schema.md SHA placeholder pattern
 sync_status: PASS
 changelog_entry_position: "CHANGELOG.md [Unreleased] > ### Security, second bullet (after SPEC-TELEGRAM-001 httpx entry)"
 frontmatter_status_transitions:
