@@ -232,3 +232,9 @@ dist-ssr/
 .vercel/
 .netlify/
 .firebase/
+
+# ===========================================
+# Telegram Bot Runtime Data (SPEC-TELEGRAM-001)
+# Personal notes/photos/PDFs saved by the bot at runtime; never source or docs.
+# ===========================================
+telegram-notes/
