@@ -78,7 +78,7 @@ m1_to_mN_commit_strategy: "single M1 commit covering M1-M4 (UX wording + venv ch
 
 ```yaml
 sync_complete_at: "2026-07-18T00:00:00+09:00"
-sync_commit_sha: "pending-backfill-sync"
+sync_commit_sha: "1a5692d468b4454deddb65500231cb5f1c9916fd"
 sync_status: "completed"
 changelog_entry_position: "CHANGELOG.md [Unreleased] > ### Added, after the SPEC-OCR-001 entry"
 frontmatter_status_transitions:
