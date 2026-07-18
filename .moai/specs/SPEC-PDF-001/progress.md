@@ -147,7 +147,7 @@ m1_to_mN_commit_strategy: "single commit covering M1-M5 (RED+GREEN+REFACTOR auth
 
 ```yaml
 run_complete_at: "2026-07-19"
-run_commit_sha: "pending-backfill-v0.2.0"  # to be backfilled after commit lands
+run_commit_sha: "01312495"  # backfilled — feat(SPEC-PDF-001): M1-M5 wire automatic OCR fallback into pdf_to_markdown
 run_status: green
 ac_pass_count: 4  # AC-PDF-003a~d (신규); 기존 8 AC(v0.1.0)도 전체 재확인 PASS, 회귀 없음
 ac_fail_count: 0
