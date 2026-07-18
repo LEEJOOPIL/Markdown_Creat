@@ -2,7 +2,7 @@
 id: SPEC-OCR-001
 title: "OCR 코어 모듈 — 이미지·PDF 텍스트 추출 (한국어 지원) — 진행 기록"
 version: "0.3.0"
-status: in-progress
+status: completed
 created: 2026-07-17
 updated: 2026-07-18
 author: manager-spec
@@ -115,7 +115,11 @@ Deferred-work pointer: `spec.md` §Exclusions carries the forward reference to S
 
 ## §E.4 Sync-phase Audit-Ready Signal
 
-_<pending sync-phase>_
+- sync_status: completed
+- sync_complete_at: 2026-07-18
+- summary: 10/10 AC PASS (AC-OCR-001a~c, 002a~b, 003a~c, 005a, 006a); full suite 84/84 green (0 regressions vs 71-test baseline); coverage `src/markdown_creat/ocr.py` 100% (target 85%); `ruff` clean; `pdf_to_markdown.py` untouched per SPEC scope boundary.
+- artifacts_synced: CHANGELOG.md (`[Unreleased]` § Added, new SPEC-OCR-001 entry), README.md (spot-checked, no correction needed — manager-develop's edits verified accurate against `ocr.py`/`handlers.py`), spec.md/plan.md/acceptance.md frontmatter (`in-progress` → `completed`, `updated: 2026-07-18`)
+- sync_commit_sha: pending-backfill-SPEC-OCR-001-sync
 
 ## §F Phase 4 Mode Selection
 
