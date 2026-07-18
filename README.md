@@ -127,6 +127,8 @@ ruff check .
   criteria passing (17 tests).
 - SPEC-TELEGRAM-001 (Telegram → Markdown storage bot): implemented, 10/10
   acceptance criteria passing, 96% test coverage.
+- SPEC-TELEGRAM-002 (attachment path traversal fix, CWE-22): implemented,
+  4/4 acceptance criteria passing, `storage.py` coverage 100%.
 - SPEC-OCR-001 (shared OCR core module + Korean photo-path wiring):
   implemented, all acceptance criteria passing.
 - SPEC-GEN-001 (Markdown generation from templates): see

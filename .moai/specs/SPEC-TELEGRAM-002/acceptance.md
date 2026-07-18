@@ -2,7 +2,7 @@
 id: SPEC-TELEGRAM-002
 title: "텔레그램 첨부파일 저장 경로 순회 취약점 수정 — 인수 기준"
 version: "0.1.0"
-status: in-progress
+status: completed
 created: 2026-07-18
 updated: 2026-07-18
 author: manager-spec

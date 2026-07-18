@@ -13,6 +13,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   봇 토큰을 담기 때문에 raw 토큰이 로그에 남던 문제를 수정. 진입점
   (`telegram_bot/__main__.py`)에서 `httpx` 로거를 WARNING 레벨로 낮춰 억제한다.
   sync 이후 라이브 스모크 테스트 중 발견되었으며, 회귀 방지 테스트로 가드한다.
+- **첨부파일 저장 경로 순회(Path Traversal) 취약점 수정** (SPEC-TELEGRAM-002,
+  REQ-TELEGRAM-019~023, CWE-22): 텔레그램 API가 제공하는 공격자 제어 가능한
+  `filename`을 정제 없이 저장 경로 조합에 사용하던 `save_attachment()`의
+  취약점을 수정. `_sanitize_attachment_basename()` 헬퍼를 추가해 `/`와 `\`
+  양쪽 구분자를 명시적으로 제거한 순수 basename만 저장 경로에 사용하도록
+  했다(`pathlib`의 플랫폼 종속적 구분자 인식에 의존하지 않음). 상위 디렉토리
+  이동(`..`), 절대 경로, Windows 드라이브 문자 형태 파일명을 모두 무력화하고,
+  정제 결과가 비거나 `.`/`..`만 남으면 고정 폴백 파일명을 사용한다. 정상
+  파일명(경로 구분자 없음)의 기존 `<timestamp>_<message_id>_<original-name>`
+  명명 규칙과 비ASCII(한글 등) 파일명 보존은 회귀 없이 그대로 유지된다.
+  `save_attachment()`의 공개 함수 시그니처는 변경되지 않았으며 `handlers.py`
+  호출부도 수정하지 않았다. Reproduction-First TDD로 개발: 수정 전 코드를
+  대상으로 한 익스플로잇 재현 테스트가 먼저 RED임을 확인한 뒤 GREEN 전환.
+  4/4 인수 기준(AC-TELEGRAM-019a~d) 통과, `storage.py` 커버리지 100%, 기존
+  회귀 스위트(31개 테스트) 전부 통과.
 
 ### Added
 

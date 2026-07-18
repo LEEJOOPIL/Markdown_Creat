@@ -2,7 +2,7 @@
 id: SPEC-TELEGRAM-002
 title: "텔레그램 첨부파일 저장 경로 순회 취약점 수정 — 진행 기록"
 version: "0.1.0"
-status: in-progress
+status: completed
 created: 2026-07-18
 updated: 2026-07-18
 author: manager-spec
@@ -72,7 +72,22 @@ m1_to_mN_commit_strategy: "single combined commit for M1(RED)+M2(GREEN)+M3(REFAC
 
 ## §E.4 Sync-phase Audit-Ready Signal
 
-_<pending sync-phase>_
+```yaml
+sync_complete_at: "2026-07-18T08:45:00Z"
+sync_commit_sha: "pending-backfill-sync"  # backfilled post-commit per spec-frontmatter-schema.md SHA placeholder pattern
+sync_status: PASS
+changelog_entry_position: "CHANGELOG.md [Unreleased] > ### Security, second bullet (after SPEC-TELEGRAM-001 httpx entry)"
+frontmatter_status_transitions:
+  spec_md: "in-progress -> completed"
+  plan_md: "in-progress -> completed"
+  acceptance_md: "in-progress -> completed"
+  progress_md: "in-progress -> completed"
+b12_self_test_a: "grep -c 'SPEC-TELEGRAM-002' CHANGELOG.md (pre-emission) = 0 -> emission proceeded"
+b12_self_test_b: "acceptance.md SSOT AC row count = 4 (AC-TELEGRAM-019a/b/c/d) -- CHANGELOG entry references 4/4, matches"
+b12_self_test_c: "src/markdown_creat/telegram_bot/storage.py and tests/test_telegram_storage.py existence verified via git show --stat eaf2bb3 before drafting CHANGELOG"
+readme_updated: true  # Project Status section: added SPEC-TELEGRAM-002 line
+docs_body_modified: false  # spec.md/plan.md/acceptance.md body content untouched; frontmatter status/updated only
+```
 
 ## §F Phase 4 Mode Selection
 
