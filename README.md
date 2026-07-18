@@ -7,10 +7,17 @@ Tools for converting documents to and from standardized Markdown.
 - **PDF → Markdown** (`markdown_creat.pdf_to_markdown`): converts a PDF file
   to a Markdown file. Body text is extracted in reading order, and heading
   structure (`#`, `##`, `###`) is detected using a font-size heuristic.
+- **OCR core module** (`markdown_creat.ocr`, SPEC-OCR-001): shared image and
+  PDF-page OCR text extraction via `pytesseract`, with English and Korean
+  language support (`lang="eng"` default, `lang="kor"` / `"kor+eng"` for
+  Korean). Used by the Telegram bot's photo path below; the PDF page-image
+  function (`extract_pdf_text_via_ocr`) is a building block for a future
+  automatic OCR fallback in `pdf_to_markdown` (not yet wired in).
 - **Telegram → Markdown bot** (`markdown_creat.telegram_bot`, SPEC-TELEGRAM-001):
   a long-polling Telegram bot that saves incoming text, photo, and PDF/document
   messages as dated Markdown notes under `telegram-notes/YYYY-MM-DD/`, with
-  OCR text extraction for photos (`pytesseract`) and PDF text extraction
+  OCR text extraction for photos (via the shared `markdown_creat.ocr` module
+  above, wired to extract Korean + English text) and PDF text extraction
   (reusing `pdf_to_markdown` above). Original attachments are always kept
   under a `files/` subfolder alongside the note.
 
@@ -26,6 +33,31 @@ The Telegram bot additionally requires `python-telegram-bot>=22.0` and
 `pytesseract>=0.3.13` (also installed automatically as dependencies). OCR
 requires the Tesseract OCR engine to be installed separately as a system
 binary — it is not a Python package and is not installed by `pip`.
+
+### Tesseract Korean language pack (`kor` traineddata)
+
+Korean OCR (`lang="kor"` / `"kor+eng"`) requires the Tesseract `kor`
+traineddata to be installed at the system level, in addition to the
+Tesseract binary itself. This is a system-level prerequisite, not a pip
+package:
+
+```bash
+# Debian/Ubuntu
+sudo apt-get install tesseract-ocr-kor
+
+# macOS (Homebrew)
+brew install tesseract-lang
+
+# Windows
+# Download kor.traineddata from
+# https://github.com/tesseract-ocr/tessdata and place it in Tesseract's
+# tessdata directory (e.g. C:\Program Files\Tesseract-OCR\tessdata).
+```
+
+If the `kor` language pack is missing, OCR calls with `lang="kor"` or
+`lang="kor+eng"` raise `markdown_creat.ocr.OcrError` with the original
+Tesseract error message (identifying which language pack is missing) instead
+of silently falling back to English or returning an empty result.
 
 ## Usage
 
@@ -50,9 +82,12 @@ Raised exceptions (all subclasses of `MarkdownConversionError`):
 
 ## Out of Scope (current version)
 
-Table extraction, image/figure extraction, OCR, batch/multi-file processing,
-and a CLI entry point are not implemented. See
-`.moai/specs/SPEC-PDF-001/spec.md` for the full scope definition.
+Table extraction, image/figure extraction, batch/multi-file processing, and
+a CLI entry point are not implemented. Automatic OCR fallback inside
+`pdf_to_markdown` for scanned/image-only PDFs is also not yet wired in (see
+`.moai/specs/SPEC-OCR-001/spec.md` §Exclusions — planned as a future
+`SPEC-PDF-001` amendment). See `.moai/specs/SPEC-PDF-001/spec.md` for the
+full PDF-conversion scope definition.
 
 ## Telegram bot usage
 
@@ -92,5 +127,7 @@ ruff check .
   criteria passing (17 tests).
 - SPEC-TELEGRAM-001 (Telegram → Markdown storage bot): implemented, 10/10
   acceptance criteria passing, 96% test coverage.
+- SPEC-OCR-001 (shared OCR core module + Korean photo-path wiring):
+  implemented, all acceptance criteria passing.
 - SPEC-GEN-001 (Markdown generation from templates): see
   `.moai/specs/SPEC-GEN-001/`.

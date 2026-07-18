@@ -68,7 +68,7 @@ def handle_photo_message(
     attachment_path = save_attachment(base_dir, timestamp, message_id, filename, photo_bytes)
 
     try:
-        ocr_text = extract_image_text(str(attachment_path))
+        ocr_text = extract_image_text(str(attachment_path), lang="kor+eng")
         body = ocr_text if ocr_text else _NO_TEXT_EXTRACTED_NOTE
     except ImageOcrError:
         body = _OCR_FAILED_NOTE

@@ -2,9 +2,9 @@
 id: SPEC-OCR-001
 title: "OCR 코어 모듈 — 이미지·PDF 텍스트 추출 (한국어 지원) — 구현 계획"
 version: "0.3.0"
-status: draft
+status: in-progress
 created: 2026-07-17
-updated: 2026-07-17
+updated: 2026-07-18
 author: manager-spec
 priority: P1
 phase: "v0.1.0 target"

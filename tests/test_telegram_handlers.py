@@ -109,6 +109,35 @@ def test_handle_photo_message_saves_original_and_failure_note_on_ocr_error(tmp_p
 
 
 # ---------------------------------------------------------------------------
+# M3 -- photo path Korean end-to-end wiring (SPEC-OCR-001 REQ-OCR-015,
+# AC-OCR-006a). Unlike the tests above, this one does NOT mock
+# `handlers.extract_image_text` directly -- it mocks at the seam
+# (`markdown_creat.ocr.pytesseract.image_to_string`) so the real
+# telegram_bot.ocr re-export -> markdown_creat.ocr chain is exercised and
+# the `lang="kor+eng"` argument wiring is actually verified end to end.
+# ---------------------------------------------------------------------------
+
+
+def test_handle_photo_message_wires_korean_lang_to_pytesseract_seam(tmp_path):
+    base = str(tmp_path / "telegram-notes")
+
+    with patch(
+        "markdown_creat.ocr.pytesseract.image_to_string",
+        return_value="한글 사진 텍스트",
+    ) as mock_ocr:
+        result_path = handlers.handle_photo_message(
+            base, 5, TIMESTAMP, "Alice", None, b"\xff\xd8fakejpeg", "korean.jpg"
+        )
+
+    mock_ocr.assert_called_once()
+    _, kwargs = mock_ocr.call_args
+    assert kwargs.get("lang") == "kor+eng"
+
+    content = result_path.read_text(encoding="utf-8")
+    assert "한글 사진 텍스트" in content
+
+
+# ---------------------------------------------------------------------------
 # M2 -- document handler: PDF extraction vs non-PDF minimal scope
 # (REQ-TELEGRAM-005, 006; plan.md SS D M2 non-PDF minimal-scope decision)
 # ---------------------------------------------------------------------------
