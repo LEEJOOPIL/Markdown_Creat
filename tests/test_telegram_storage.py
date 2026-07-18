@@ -161,3 +161,92 @@ def test_save_attachment_avoids_filename_collision_across_messages(tmp_path):
     assert first != second
     assert first.read_bytes() == b"first"
     assert second.read_bytes() == b"second"
+
+
+# ---------------------------------------------------------------------------
+# M1 -- save_attachment() path-traversal sanitization
+# (REQ-TELEGRAM-019~023, AC-TELEGRAM-019a~d, SPEC-TELEGRAM-002)
+# ---------------------------------------------------------------------------
+
+
+def test_save_attachment_rejects_parent_directory_traversal_in_filename(tmp_path):
+    """AC-TELEGRAM-019a -- Reproduction-First: this test reproduces the
+    path-traversal exploit (a filename laced with `..` sequences must not
+    escape `<base_dir>/files/`) and fails against the pre-fix implementation,
+    which writes `evil.txt` directly under `<base_dir>/`."""
+    base = str(tmp_path / "telegram-notes")
+
+    result = save_attachment(base, TIMESTAMP, 1, "../../../evil.txt", b"exploit")
+
+    assert result.resolve().parent == (Path(base) / "files").resolve()
+    assert result.name == "2026-07-16_103045_1_evil.txt"
+    assert result.read_bytes() == b"exploit"
+    assert not (Path(base) / "evil.txt").exists()
+    assert not (tmp_path / "evil.txt").exists()
+
+
+def test_save_attachment_rejects_absolute_and_drive_prefixed_filename(tmp_path):
+    """AC-TELEGRAM-019b -- absolute-path-like and Windows drive-letter-
+    prefixed filenames are reduced to their sanitized basename and confined
+    to `<base_dir>/files/`."""
+    base = str(tmp_path / "telegram-notes")
+
+    posix_result = save_attachment(base, TIMESTAMP, 2, "/etc/passwd", b"a")
+    windows_result = save_attachment(base, TIMESTAMP, 3, "C:\\Windows\\evil.txt", b"b")
+
+    assert posix_result.resolve().parent == (Path(base) / "files").resolve()
+    assert posix_result.name == "2026-07-16_103045_2_passwd"
+    assert windows_result.resolve().parent == (Path(base) / "files").resolve()
+    assert windows_result.name == "2026-07-16_103045_3_evil.txt"
+
+
+def test_save_attachment_preserves_legitimate_filename_naming_convention(tmp_path):
+    """AC-TELEGRAM-019c -- no regression: legitimate filenames with no path
+    separators keep the existing `<timestamp>_<message_id>_<filename>`
+    naming convention exactly as before the fix."""
+    base = str(tmp_path / "telegram-notes")
+
+    result = save_attachment(base, TIMESTAMP, 42, "photo.jpg", b"content")
+
+    assert result == Path(base) / "files" / "2026-07-16_103045_42_photo.jpg"
+    assert result.read_bytes() == b"content"
+
+
+def test_save_attachment_falls_back_to_placeholder_for_dot_only_filename(tmp_path):
+    """AC-TELEGRAM-019d -- a filename that sanitizes to an empty or
+    directory-reference-only basename (`.` or `..`) falls back to a fixed
+    placeholder filename instead of failing or being silently dropped."""
+    base = str(tmp_path / "telegram-notes")
+
+    dotdot_result = save_attachment(base, TIMESTAMP, 4, "..", b"c")
+    dot_result = save_attachment(base, TIMESTAMP, 5, ".", b"d")
+
+    assert dotdot_result.exists()
+    assert dotdot_result.resolve().parent == (Path(base) / "files").resolve()
+    assert dot_result.exists()
+    assert dot_result.resolve().parent == (Path(base) / "files").resolve()
+    # message_id keeps the two fallback filenames distinct (no collision).
+    assert dotdot_result != dot_result
+
+
+def test_save_attachment_flattens_subdirectory_style_filename(tmp_path):
+    """Edge case (acceptance.md SS D.1) -- a non-traversal relative path
+    with a subdirectory component is flattened to its basename; no nested
+    directory is created under `files/`."""
+    base = str(tmp_path / "telegram-notes")
+
+    result = save_attachment(base, TIMESTAMP, 6, "subdir/photo.jpg", b"e")
+
+    assert result.resolve().parent == (Path(base) / "files").resolve()
+    assert result.name == "2026-07-16_103045_6_photo.jpg"
+    assert not (Path(base) / "files" / "subdir").exists()
+
+
+def test_save_attachment_preserves_non_ascii_filename_without_separators(tmp_path):
+    """Edge case (acceptance.md SS D.1) -- legitimate non-ASCII filenames
+    survive sanitization unchanged when they contain no path separators."""
+    base = str(tmp_path / "telegram-notes")
+
+    result = save_attachment(base, TIMESTAMP, 7, "사진.jpg", b"f")
+
+    assert result == Path(base) / "files" / "2026-07-16_103045_7_사진.jpg"

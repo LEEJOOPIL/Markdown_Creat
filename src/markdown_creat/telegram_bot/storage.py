@@ -20,6 +20,7 @@ from pathlib import Path
 
 DEFAULT_BASE_FOLDER = "telegram-notes"
 _ATTACHMENTS_DIRNAME = "files"
+_FALLBACK_ATTACHMENT_BASENAME = "attachment"
 
 
 def note_dir(base_dir: str | os.PathLike[str], timestamp: datetime) -> Path:
@@ -87,6 +88,26 @@ def save_note(
     return path
 
 
+def _sanitize_attachment_basename(filename: str) -> str:
+    """Reduce `filename` to a safe, separator-free basename.
+
+    Defeats path traversal (CWE-22, REQ-TELEGRAM-019~021) by explicitly
+    splitting on both `/` and `\\` -- the Telegram-provided `filename` string
+    may contain either separator regardless of host OS, so relying solely on
+    `pathlib`'s platform-dependent separator recognition would miss one of
+    the two vectors. Falls back to a fixed placeholder when the sanitized
+    result is empty or a directory-reference-only segment (REQ-TELEGRAM-023).
+    Non-separator characters (including non-ASCII) are left untouched
+    (REQ-TELEGRAM-022).
+    """
+    normalized = filename.replace("\\", "/")
+    segments = [segment for segment in normalized.split("/") if segment]
+    basename = segments[-1] if segments else ""
+    if basename in ("", ".", ".."):
+        return _FALLBACK_ATTACHMENT_BASENAME
+    return basename
+
+
 def save_attachment(
     base_dir: str | os.PathLike[str],
     timestamp: datetime,
@@ -94,11 +115,17 @@ def save_attachment(
     filename: str,
     content: bytes,
 ) -> Path:
-    """Write the original attachment bytes under `<base_dir>/files/`."""
+    """Write the original attachment bytes under `<base_dir>/files/`.
+
+    `filename` is sanitized to a safe basename before path construction to
+    prevent path traversal / arbitrary file write (CWE-22, REQ-TELEGRAM-019
+    ~023 -- SPEC-TELEGRAM-002).
+    """
     attachments_dir = Path(base_dir) / _ATTACHMENTS_DIRNAME
     attachments_dir.mkdir(parents=True, exist_ok=True)
 
-    safe_name = f"{timestamp.strftime('%Y-%m-%d_%H%M%S')}_{message_id}_{filename}"
+    safe_filename = _sanitize_attachment_basename(filename)
+    safe_name = f"{timestamp.strftime('%Y-%m-%d_%H%M%S')}_{message_id}_{safe_filename}"
     path = attachments_dir / safe_name
     path.write_bytes(content)
     return path
