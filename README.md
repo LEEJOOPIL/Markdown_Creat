@@ -6,13 +6,15 @@ Tools for converting documents to and from standardized Markdown.
 
 - **PDF → Markdown** (`markdown_creat.pdf_to_markdown`): converts a PDF file
   to a Markdown file. Body text is extracted in reading order, and heading
-  structure (`#`, `##`, `###`) is detected using a font-size heuristic.
+  structure (`#`, `##`, `###`) is detected using a font-size heuristic. For
+  scanned/image-only PDFs with no extractable text layer, automatically
+  falls back to OCR (`lang="kor+eng"`) before raising an error (SPEC-PDF-001
+  v0.2.0).
 - **OCR core module** (`markdown_creat.ocr`, SPEC-OCR-001): shared image and
   PDF-page OCR text extraction via `pytesseract`, with English and Korean
   language support (`lang="eng"` default, `lang="kor"` / `"kor+eng"` for
-  Korean). Used by the Telegram bot's photo path below; the PDF page-image
-  function (`extract_pdf_text_via_ocr`) is a building block for a future
-  automatic OCR fallback in `pdf_to_markdown` (not yet wired in).
+  Korean). Used by both the Telegram bot's photo path and the PDF automatic
+  OCR fallback above.
 - **Telegram → Markdown bot** (`markdown_creat.telegram_bot`, SPEC-TELEGRAM-001):
   a long-polling Telegram bot that saves incoming text, photo, and PDF/document
   messages as dated Markdown notes under `telegram-notes/YYYY-MM-DD/`, with
@@ -71,6 +73,12 @@ pdf_to_markdown("document.pdf", "document.md")
 `output_path`, overwriting any existing file there. On error, no file is
 written or left partially written.
 
+When a PDF has no extractable text layer (e.g. a scanned/image-only PDF), the
+function automatically renders each page to an image and attempts OCR
+(`lang="kor+eng"`) before raising `PDFNoTextError`. OCR-derived text is
+written as plain paragraphs (no heading detection, since OCR output carries
+no font-size metadata).
+
 Raised exceptions (all subclasses of `MarkdownConversionError`):
 
 | Exception | Raised when |
@@ -78,16 +86,17 @@ Raised exceptions (all subclasses of `MarkdownConversionError`):
 | `PDFNotFoundError` | No file exists at `pdf_path` |
 | `PDFCorruptedError` | The file exists but cannot be parsed as a PDF |
 | `PDFEncryptedError` | The PDF is password-protected |
-| `PDFNoTextError` | No extractable text was found (e.g. a scanned/image-only PDF) |
+| `PDFNoTextError` | No extractable text was found, even after the OCR fallback |
+| `PDFOCRFailedError` | The OCR fallback itself failed (e.g. OCR engine not installed, missing language pack) |
 
 ## Out of Scope (current version)
 
 Table extraction, image/figure extraction, batch/multi-file processing, and
-a CLI entry point are not implemented. Automatic OCR fallback inside
-`pdf_to_markdown` for scanned/image-only PDFs is also not yet wired in (see
-`.moai/specs/SPEC-OCR-001/spec.md` §Exclusions — planned as a future
-`SPEC-PDF-001` amendment). See `.moai/specs/SPEC-PDF-001/spec.md` for the
-full PDF-conversion scope definition.
+a CLI entry point are not implemented. The automatic OCR fallback (v0.2.0)
+does not include image preprocessing/accuracy tuning, a configurable OCR
+language (fixed to `kor+eng`), page-count/timeout limits, or heading
+detection on OCR-derived text. See `.moai/specs/SPEC-PDF-001/spec.md`
+§Exclusions for the full PDF-conversion scope definition.
 
 ## Telegram bot usage
 
@@ -128,8 +137,9 @@ ruff check .
 
 ## Project Status
 
-- SPEC-PDF-001 (PDF → Markdown core conversion): implemented, all acceptance
-  criteria passing (17 tests).
+- SPEC-PDF-001 (PDF → Markdown core conversion + v0.2.0 automatic OCR
+  fallback for scanned PDFs): implemented, all 12 acceptance criteria
+  passing (21 dedicated tests; 94 total project-wide, no regressions).
 - SPEC-TELEGRAM-001 (Telegram → Markdown storage bot): implemented, 10/10
   acceptance criteria passing, 96% test coverage.
 - SPEC-TELEGRAM-002 (attachment path traversal fix, CWE-22): implemented,

@@ -40,6 +40,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Never leaves a partial `.md` file on error (output is assembled in
     memory before the file is written).
   - Overwrites an existing file at `output_path`.
+- **자동 OCR 폴백 통합** (SPEC-PDF-001 v0.2.0 앰언드먼트): `pdf_to_markdown()`이
+  텍스트 레이어 없는 PDF(스캔·이미지 전용)를 만났을 때, 즉시 오류를 내는 대신
+  SPEC-OCR-001의 `extract_pdf_text_via_ocr()`(언어 `kor+eng` 고정)를 자동으로
+  호출해 OCR 텍스트를 시도한다.
+  - OCR로 텍스트를 찾으면 문단으로만 구성된 `.md` 파일을 정상적으로 기록한다
+    (OCR 결과에는 폰트 크기 정보가 없어 제목 구조는 감지하지 않음).
+  - OCR로도 텍스트를 찾지 못하면 기존과 동일하게 `PDFNoTextError`를 발생시킨다
+    (REQ-PDF-009, 동작 계약 재확인).
+  - OCR 엔진 자체의 오류(Tesseract 미설치·언어팩 누락 등)는 신규 예외
+    `PDFOCRFailedError`로 구분해 발생시킨다(REQ-PDF-011).
+  - 텔레그램 봇의 PDF 처리 경로는 `pdf_to_markdown()`을 그대로 재사용하므로
+    별도 수정 없이 이 동작을 그대로 상속받는다.
+  - 신규 pip 의존성 없음(`pytesseract`는 SPEC-OCR-001에서 이미 추가됨).
+  - 4개 신규 인수 기준(AC-PDF-003a~d) 통과, 기존 8개 인수 기준 회귀 없이
+    재확인. `pdf_to_markdown.py` 커버리지 95%.
 - **Telegram → Markdown bot** (`markdown_creat.telegram_bot`, SPEC-TELEGRAM-001):
   a long-polling bot that saves incoming text, photo, and PDF/document
   messages as dated Markdown notes.
@@ -87,11 +102,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     텍스트가 저장되는 `.md` 본문에 종단 추출된다.
   - README에 Tesseract `kor` traineddata(시스템 레벨 설치 필요) 안내 추가.
   - 신규 pip 의존성 없음 — 기존 `pymupdf`, `pytesseract`만 재사용.
-  - **참고(미인도 범위)**: PDF(스캔) 경로에서 `pdf_to_markdown()`이 텍스트
-    없는 PDF를 만났을 때 자동으로 OCR을 시도하는 폴백 통합은 본 SPEC의
-    범위 밖이며 아직 구현되지 않았다 — 향후 별도의 SPEC-PDF-001 앰언드먼트가
-    다룰 예정이다. `extract_pdf_text_via_ocr()`는 그 통합이 사용할 코어
-    함수로 미리 제공되었으나 아직 호출자가 없다.
+  - **후속(완료)**: PDF(스캔) 경로 자동 OCR 폴백 통합은 위 "자동 OCR 폴백
+    통합" 항목(SPEC-PDF-001 v0.2.0 앰언드먼트)에서 완료되었다.
+    `extract_pdf_text_via_ocr()`는 신규 로직 없이 그대로 재사용되었다.
   - 10/10 인수 기준 통과, `ocr.py` 테스트 커버리지 100%, 전체 테스트
     스위트 84/84 그린(기존 대비 회귀 없음).
 - **텔레그램 봇 Windows 더블클릭 실행기** (`run_telegram_bot.bat`,

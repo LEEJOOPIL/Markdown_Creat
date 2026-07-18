@@ -2,7 +2,7 @@
 id: SPEC-PDF-001
 title: "PDF → 마크다운 변환 코어 기능 — 진행 기록"
 version: "0.2.0"
-status: in-progress
+status: completed
 created: 2026-07-14
 updated: 2026-07-19
 author: manager-spec
@@ -178,6 +178,32 @@ spec.md/progress.md frontmatter 상태를 `in-progress` → `completed`로 전�
 파일(.claude/, .moai/config/ 등)은 `core.autocrlf=true` 설정으로 인한 줄바꿈 문자
 정규화 경고일 뿐 실제 내용 변경이 아니며, SPEC-PDF-001과 무관하므로 사용자 확인 후
 이번 sync 커밋 범위에서 명시적으로 제외함.
+
+### v0.2.0 앰언드먼트 — Sync-phase Audit-Ready Signal (addendum)
+
+```yaml
+sync_complete_at: "2026-07-19"
+sync_commit_sha: "pending-backfill-sync-v0.2.0"  # follow-up chore commit backfills the real SHA
+docs_updated:
+  - "README.md (OCR fallback description, PDFOCRFailedError, Out of Scope, Project Status)"
+  - "CHANGELOG.md ([Unreleased] Added — v0.2.0 OCR fallback entry + stale note update)"
+spec_status_transition: "in-progress -> completed"
+```
+
+Sync 범위(v0.2.0): plan-phase 단계에서 초안 작성된 채 커밋되지 않고 남아 있던
+spec.md/plan.md/acceptance.md의 v0.2.0 앰언드먼트 본문(REQ-PDF-009 개정,
+REQ-PDF-011/012/013 신설, Amendments 섹션)을 run-phase 구현(커밋 `01312495`)과
+함께 이번 sync 커밋에서 최초로 커밋한다 — 본문 내용은 이미 작성 완료된 상태였으며
+이번 sync에서는 frontmatter `status:` 전환만 수행(spec-frontmatter-schema.md
+Status Transition Ownership Matrix에 따라 manager-docs 소유 범위 내).
+README.md/CHANGELOG.md의 "OCR 폴백 아직 미구현" 서술을 실제 구현 완료 상태로 갱신.
+테스트 재검증: `pytest -q` 94 passed(전체), `pytest tests/test_pdf_to_markdown.py -q`
+21 passed(회귀 없음). `ruff check .` 무경고. 커버리지 `pdf_to_markdown.py` 95%
+(기존 progress.md §E.3 addendum 값과 일치, 재측정으로 확인).
+
+제외: `.moai/specs/.moai/state/context-usage.json`(원인 불명 런타임 상태 파일,
+SPEC-PDF-001과 무관), `telegram-notes/`(텔레그램 봇 런타임 데이터, 코드/문서
+변경 아님) — 둘 다 이번 sync 커밋 범위에서 명시적으로 제외.
 
 ## §F Phase 4 Mode Selection
 
