@@ -56,14 +56,14 @@ tier: M
 
 ```yaml
 run_complete_at: "2026-07-18T00:00:00+09:00"
-run_commit_sha: "pending-backfill-m1"
+run_commit_sha: "e47f1cb0"
 run_status: "pass-with-debt"
 ac_pass_count: 6
 ac_fail_count: 0
 ac_pass_with_debt_count: 3
 preserve_list_post_run_count: 3  # src/markdown_creat/telegram_bot/, pyproject.toml, .env — all confirmed unmodified
 l44_pre_commit_fetch: "n/a — Route A Hybrid Trunk main-direct, single-session, no parallel-session race detected"
-l44_post_push_fetch: "pending — recorded on push"
+l44_post_push_fetch: "confirmed synced — git rev-list --count --left-right origin/master...HEAD → 0 0"
 new_warnings_or_lints_introduced: "n/a — .bat file is not a ruff/black/pytest target per plan.md §E"
 cross_platform_build:
   applicable: false
