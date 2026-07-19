@@ -55,6 +55,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - 신규 pip 의존성 없음(`pytesseract`는 SPEC-OCR-001에서 이미 추가됨).
   - 4개 신규 인수 기준(AC-PDF-003a~d) 통과, 기존 8개 인수 기준 회귀 없이
     재확인. `pdf_to_markdown.py` 커버리지 95%.
+
+### Fixed
+
+- **OCR이 이 컴퓨터에서 계속 실패하던 두 가지 근본 원인 수정** (SPEC-OCR-001,
+  라이브 사용자 리포트 후속): v0.2.0 자동 OCR 폴백을 실제 운영 환경에서 검증하는
+  과정에서, "OCR을 아예 인식하지 못한다"는 문제가 사실 두 개의 서로 다른
+  원인으로 이루어져 있었음을 확인하고 각각 수정했다.
+  - **페이지 렌더링 크기 초과**: 물리적으로 매우 크거나 긴 페이지(예: 웹페이지를
+    통째로 캡처해 PDF로 저장한 문서)를 고정 300 DPI로 렌더링하면 PyMuPDF의
+    픽셀맵 크기 한도를 넘어 `Overly large image` 오류로 즉시 실패했다.
+    `extract_pdf_text_via_ocr()`의 페이지 렌더링 단계가 300→150→96→72 DPI
+    순으로 자동 하향 재시도하도록 수정(`_render_page_to_image()` 신설).
+  - **Tesseract가 PATH에 없음**: 이 컴퓨터를 포함해 Windows 기본 설치 관례상
+    Tesseract OCR 엔진이 설치는 되어 있어도 시스템 PATH에 등록되지 않아,
+    `pytesseract`가 실행 파일을 찾지 못해 OCR이 시도조차 되지 않고 실패하는
+    경우가 있었다(사진 OCR 경로도 동일 원인으로 처음부터 실패하고 있었음이
+    함께 확인됨). 모듈 임포트 시 `shutil.which()`로 먼저 PATH를 확인하고,
+    찾지 못하면 Windows 기본 설치 경로(`C:\Program Files\Tesseract-OCR\`
+    등)를 자동으로 사용하도록 `_configure_tesseract_cmd()`를 신설했다. 이미
+    PATH에 등록되어 있거나 비-Windows 환경에서는 아무 영향이 없다.
+  - 두 수정 모두 실제로 실패했던 운영 PDF로 end-to-end 재현 → 수정 전 RED
+    확인 → 수정 후 실제 텍스트 추출 성공까지 검증. 신규 재현 테스트 4개
+    추가, `ocr.py` 커버리지 100% 유지, 전체 회귀 스위트 98개 전부 통과.
+  - **알려진 잔여 한계(범위 밖, 별도 SPEC 대상)**: 아이콘·표·다단 레이아웃이
+    섞인 "웹페이지 캡처형" PDF는 해당 그래픽 영역이 깨진 문자로 OCR되는
+    경우가 있다(Tesseract 기본 레이아웃 분석 한계). 순수 이미지 전처리·
+    페이지 세그멘테이션 모드 튜닝은 SPEC-OCR-001 §Exclusions에 따라 범위
+    밖으로 남겨둔다.
 - **Telegram → Markdown bot** (`markdown_creat.telegram_bot`, SPEC-TELEGRAM-001):
   a long-polling bot that saves incoming text, photo, and PDF/document
   messages as dated Markdown notes.

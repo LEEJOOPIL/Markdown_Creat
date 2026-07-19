@@ -14,12 +14,38 @@ a future SPEC-PDF-001 amendment (spec.md SS 범위 경계).
 from __future__ import annotations
 
 import os
+import shutil
 import tempfile
 
 import fitz
 import pytesseract
 
 __all__ = ["extract_image_text", "extract_pdf_text_via_ocr", "OcrError"]
+
+# Default install location of the official Windows Tesseract installer
+# (https://github.com/UB-Mannheim/tesseract/wiki). The installer does not
+# always add tesseract.exe to PATH, which makes pytesseract's default
+# `tesseract` command lookup fail even though the engine is installed.
+_WINDOWS_TESSERACT_CANDIDATES = (
+    r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+    r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+)
+
+
+def _configure_tesseract_cmd() -> None:
+    """Point pytesseract at a known Tesseract install path when the default
+    `tesseract` command is not resolvable on PATH. No-op when it already
+    resolves (Linux/macOS package managers register PATH automatically, and
+    a user-configured Windows PATH is left untouched)."""
+    if shutil.which(pytesseract.pytesseract.tesseract_cmd):
+        return
+    for candidate in _WINDOWS_TESSERACT_CANDIDATES:
+        if os.path.isfile(candidate):
+            pytesseract.pytesseract.tesseract_cmd = candidate
+            return
+
+
+_configure_tesseract_cmd()
 
 
 class OcrError(Exception):
@@ -96,15 +122,33 @@ def extract_pdf_text_via_ocr(pdf_path: str, lang: str = "eng") -> str:
     return "\n\n".join(page_texts)
 
 
+# Progressively lower DPI fallback for physically oversized pages (e.g. a
+# long screenshot-style scan saved as PDF). An unusually tall/wide page can
+# overflow the renderer's pixmap size limit at the default 300 DPI; each
+# step down keeps enough resolution for OCR while shrinking the rendered
+# pixel count until it fits.
+_PDF_PAGE_RENDER_DPIS = (300, 150, 96, 72)
+
+
+def _render_page_to_image(page: fitz.Page, page_index: int, tmp_dir: str) -> str:
+    """Render a single PDF page to a temp PNG, backing off to a lower DPI
+    when the page is too large to render at full resolution."""
+    tmp_image_path = os.path.join(tmp_dir, f"page-{page_index}.png")
+    last_exc: Exception | None = None
+    for dpi in _PDF_PAGE_RENDER_DPIS:
+        try:
+            pixmap = page.get_pixmap(dpi=dpi)
+            pixmap.save(tmp_image_path)
+            return tmp_image_path
+        except Exception as exc:  # noqa: BLE001
+            last_exc = exc
+            continue
+    raise OcrError(f"Failed to render PDF page {page_index}: {last_exc}") from last_exc
+
+
 def _ocr_page(page: fitz.Page, page_index: int, tmp_dir: str, lang: str) -> str:
     """Render a single PDF page to a temp image and OCR it (M2 decision:
     temp-file bridge, consistent with `telegram_bot/extract.py`, avoiding a
     direct Pillow dependency)."""
-    try:
-        pixmap = page.get_pixmap(dpi=300)
-        tmp_image_path = os.path.join(tmp_dir, f"page-{page_index}.png")
-        pixmap.save(tmp_image_path)
-    except Exception as exc:  # noqa: BLE001
-        raise OcrError(f"Failed to render PDF page {page_index}: {exc}") from exc
-
+    tmp_image_path = _render_page_to_image(page, page_index, tmp_dir)
     return extract_image_text(tmp_image_path, lang=lang)

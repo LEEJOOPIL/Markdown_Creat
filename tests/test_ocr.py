@@ -17,6 +17,7 @@ from unittest.mock import patch
 import fitz
 import pytest
 
+import markdown_creat.ocr as ocr_module
 from markdown_creat.ocr import OcrError, extract_image_text, extract_pdf_text_via_ocr
 
 
@@ -159,3 +160,73 @@ def test_extract_pdf_text_via_ocr_raises_ocr_error_when_page_render_fails(tmp_pa
     with patch("fitz.Page.get_pixmap", side_effect=RuntimeError("render crashed")):
         with pytest.raises(OcrError):
             extract_pdf_text_via_ocr(str(pdf_path))
+
+
+# ---------------------------------------------------------------------------
+# _configure_tesseract_cmd -- find Tesseract when installed but not on PATH
+# (live user report: OCR always failed on this machine, even for photos,
+# because the default Windows installer does not add tesseract.exe to PATH)
+# ---------------------------------------------------------------------------
+
+
+def test_configure_tesseract_cmd_uses_windows_install_path_when_not_on_path(tmp_path, monkeypatch):
+    fake_tesseract = tmp_path / "tesseract.exe"
+    fake_tesseract.write_text("")
+
+    monkeypatch.setattr(ocr_module.shutil, "which", lambda cmd: None)
+    monkeypatch.setattr(ocr_module, "_WINDOWS_TESSERACT_CANDIDATES", (str(fake_tesseract),))
+    monkeypatch.setattr(ocr_module.pytesseract.pytesseract, "tesseract_cmd", "tesseract")
+
+    ocr_module._configure_tesseract_cmd()
+
+    assert ocr_module.pytesseract.pytesseract.tesseract_cmd == str(fake_tesseract)
+
+
+def test_configure_tesseract_cmd_does_nothing_when_already_on_path(monkeypatch):
+    monkeypatch.setattr(ocr_module.shutil, "which", lambda cmd: r"C:\Windows\tesseract.exe")
+    monkeypatch.setattr(ocr_module.pytesseract.pytesseract, "tesseract_cmd", "tesseract")
+
+    ocr_module._configure_tesseract_cmd()
+
+    assert ocr_module.pytesseract.pytesseract.tesseract_cmd == "tesseract"
+
+
+def test_configure_tesseract_cmd_leaves_default_when_no_candidate_exists(tmp_path, monkeypatch):
+    missing_path = tmp_path / "does-not-exist" / "tesseract.exe"
+
+    monkeypatch.setattr(ocr_module.shutil, "which", lambda cmd: None)
+    monkeypatch.setattr(ocr_module, "_WINDOWS_TESSERACT_CANDIDATES", (str(missing_path),))
+    monkeypatch.setattr(ocr_module.pytesseract.pytesseract, "tesseract_cmd", "tesseract")
+
+    ocr_module._configure_tesseract_cmd()
+
+    assert ocr_module.pytesseract.pytesseract.tesseract_cmd == "tesseract"
+
+
+def test_extract_pdf_text_via_ocr_falls_back_to_lower_dpi_for_oversized_page(tmp_path):
+    """Reproduction (live user report): an unusually tall/long physical page
+    (e.g. a long screenshot-style scan saved as PDF) can overflow PyMuPDF's
+    pixmap size limit at the default 300 DPI, raising
+    `pymupdf.mupdf.FzErrorLimit: code=5: Overly large image`. The page
+    render step must back off to a lower DPI instead of failing the whole
+    page outright."""
+    pdf_path = tmp_path / "oversized-page.pdf"
+    make_pdf(str(pdf_path), page_count=1)
+
+    original_get_pixmap = fitz.Page.get_pixmap
+
+    def flaky_get_pixmap(self, *args, **kwargs):
+        if kwargs.get("dpi") == 300:
+            raise RuntimeError("code=5: Overly large image")
+        return original_get_pixmap(self, *args, **kwargs)
+
+    with (
+        patch("fitz.Page.get_pixmap", new=flaky_get_pixmap),
+        patch(
+            "markdown_creat.ocr.pytesseract.image_to_string",
+            return_value="recovered text",
+        ),
+    ):
+        result = extract_pdf_text_via_ocr(str(pdf_path))
+
+    assert result == "recovered text"
